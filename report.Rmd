@@ -81,6 +81,8 @@ As the years change, how do demographic factors (age and gender) and geographica
 #1.筛选出冠心病 filter CHD
 chd_df <- final_df %>%
   filter(diagnosis == "Coronary Heart Disease")
+```
+```{r load-data, echo=FALSE}
 #全国的趋势图
 time_df <- chd_df %>%
   filter(
@@ -101,6 +103,8 @@ ggplot(time_df, aes(x = year, y = easr)) +
     y = "European Age-Standardised Mortality Rate (per 100,000)"
   ) +
   theme_minimal()
+```
+```{r load-data, echo=FALSE}
 #年龄的数据表
 age_df <- chd_df %>%
   filter(
@@ -146,6 +150,8 @@ ggplot(
     caption = "Note: 2024 data are provisional."
   ) +
   theme_minimal()
+```
+```{r load-data, echo=FALSE}
 #接下来制作性别的数据表
 gender_df <- chd_df %>%
   filter(
@@ -154,7 +160,7 @@ gender_df <- chd_df %>%
     gender %in% c("Male", "Female")
   ) %>%
   arrange(gender, year)
-#下面的区域是性别-冠心病死亡的逐年图表
+#下面的区域是性别-冠心病死亡逐年图表
 ggplot(
   gender_df,
   aes(
@@ -176,7 +182,125 @@ ggplot(
   ) +
   theme_minimal()
 ```
+```{r load-data, echo=FALSE}
+#下面制作地区的数据表
+geographical_df <- chd_df %>%
+  filter(
+    year >= 2015,
+    year <= 2023,
+    area != "Scotland",
+    age_group == "All Ages",
+    gender == "All"
+  ) %>%
+  group_by(area) %>%
+  summarise(
+    mean_easr = mean(easr, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(mean_easr))
+geographical_highlight_df <- geographical_df %>%
+  arrange(desc(mean_easr)) %>%
+  mutate(
+    rank = row_number(),
+    highlight_group = case_when(
+      rank <= 5 ~ "Top 5",
+      rank > n() - 5 ~ "Bottom 5",
+      TRUE ~ "Middle"
+    )
+  )
+geographical_top_bottom <- geographical_highlight_df %>%
+  filter(highlight_group != "Middle")
+#下面进行地区-冠心病死亡的2015-2023年平均图表制作
+ggplot(
+  geographical_top_bottom,
+  aes(
+    x = reorder(area, mean_easr),
+    y = mean_easr,
+    fill = highlight_group
+  )
+) +
+  geom_col(width = 0.7) +
+  geom_text(
+    aes(label = round(mean_easr, 1)),
+    hjust = -0.2,
+    size = 3.5
+  ) +
+  coord_flip() +
+  scale_fill_manual(
+    values = c(
+      "Top 5" = "#D55E00",
+      "Bottom 5" = "#0072B2"
+    )
+  ) +
+  expand_limits(
+    y = max(geographical_top_bottom$mean_easr) * 1.12
+  ) +
+  labs(
+    title = "Geographical Differences in CHD Mortality",
+    subtitle = "Top 5 and Bottom 5 Council Areas, 2015–2023",
+    x = "Council Area",
+    y = "Mean annual EASR (per 100,000)",
+    fill = NULL,
+    caption = "Unweighted arithmetic mean of annual EASRs."
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_text(size = 11),
+    plot.title = element_text(face = "bold"),
+    legend.position = "top"
+  )
+```
+```{r load-data, echo=FALSE}
+#下面是是为了实现不同地区逐年冠心病死亡的变化曲线（使用每年的EASR）
+geographical_trend_df <- chd_df %>%
+  filter(
+    year >= 2015,
+    year <= 2023,
+    area != "Scotland",
+    age_group == "All Ages",
+    gender == "All"
+  ) %>%
+  inner_join(
+    geographical_top_bottom %>%
+      select(area, highlight_group),
+    by = "area"
+  ) %>%
+  group_by(year, highlight_group) %>%
+  summarise(
+    mean_easr = mean(easr, na.rm = TRUE),
+    .groups = "drop"
+  )
+#下面进行绘图 这张图中的地区没有经过地区实际人口数的加权 只是简单的算术平均
+ggplot(
+  geographical_trend_df,
+  aes(
+    x = year,
+    y = mean_easr,
+    color = highlight_group
+  )
+) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(
+    values = c(
+      "Top 5" = "#D55E00",
+      "Bottom 5" = "#0072B2"
+    )
+  ) +
+  scale_x_continuous(breaks = 2015:2023) +
+  labs(
+    title = "CHD Mortality Trends in High- and Low-Mortality Areas",
+    subtitle = "Five highest vs five lowest mean-EASR Council Areas, 2015–2023",
+    x = "Year",
+    y = "Mean annual EASR (per 100,000)",
+    color = "Area Group",
+    caption = "Groups defined by 2015–2023 mean EASR; unweighted averages of five areas per group."
+  ) +
+  theme_minimal(base_size = 12)
 
+```
 ## Data
 
 The dataset for this investigation is the Scottish Heart Disease Statistics. I utilized the mortality data categorized by Council Areas and filtered for overall heart disease mortality. During the data wrangling process using the tidyverse package, I joined the raw mortality data with the Data Zone Codes dictionary to convert alphanumeric zone codes into readable Council Area names. I also removed missing values 'NA' to maintain data quality.
