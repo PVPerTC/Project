@@ -23,32 +23,159 @@ library(dplyr)
 # load your data here and any pre-processing/cleaning 
 #  that you need for your report.
 df <- read_csv("data/hd_mortalitybyca.csv")
+library(tidyverse)
+
+# 1. Load data加载数据
+df <- read_csv("data/hd_mortalitybyca.csv")
 dz_codes <- read_csv("data/dz_codes.csv")
 
-# Clean the dictionary and remove duplicates
+# 2. Create Council Area lookup table 制作地区和地区代码的对照表
 area <- dz_codes %>%
   select(CA, CAName) %>%
   distinct() %>%
   drop_na(CA, CAName)
 
-# Clean the main data
+# 3. Clean and prepare mortality data 清洗死亡数据表
 final_df <- df %>%
-  select(AgeGroup, Sex, Year, Ca) %>%
-  rename(age_group = AgeGroup,
-         gender = Sex) %>%
-  drop_na(age_group, gender, Year, Ca) %>%
-  left_join(area, by = c("Ca" = "CA")) %>%
-  select(-Ca) %>%
-  rename(area = CAName)
+  mutate(
+    year_provisional = str_ends(Year, "p"),
+    year = as.integer(str_remove(Year, "p"))
+  ) %>%
+  rename(
+    age_group = AgeGroup,
+    gender = Sex,
+    diagnosis = Diagnosis,
+    deaths = NumberOfDeaths,
+    crude_rate = CrudeRate,
+    easr = EASR,
+    ca = Ca
+  ) %>%
+  left_join(area, by = c("ca" = "CA")) %>%
+  mutate(
+    area = if_else(
+      ca == "S92000003",
+      "Scotland",
+      CAName
+    )
+  ) %>%
+  select(
+    year, year_provisional,
+    ca, area,
+    age_group, gender, diagnosis,
+    deaths, crude_rate, easr
+  )
 
-final_df
+# 4. Validate cleaned data 只是验证数据是否有异常
+stopifnot(nrow(final_df) == nrow(df))
+stopifnot(!anyNA(final_df$area))
+stopifnot(!anyNA(final_df$year))
+
+glimpse(final_df)
 ```
 
 
 ## Research Question
 
 As the years change, how do demographic factors (age and gender) and geographical location (areas) influence the overall mortality rates of heart disease in Scotland? The reason is that it is important to understand these differences in public health. By identifying which demographic groups are most vulnerable and which regions experience higher mortality rates, policymakers and healthcare providers can better allocate resources and design targeted interventions to reduce heart disease mortality across Scotland.
-
+```{r load-data, echo=FALSE}
+#1.筛选出冠心病 filter CHD
+chd_df <- final_df %>%
+  filter(diagnosis == "Coronary Heart Disease")
+#全国的趋势图
+time_df <- chd_df %>%
+  filter(
+    area == "Scotland",
+    age_group == "All Ages",
+    gender == "All"
+  ) %>%
+  arrange(year)
+#下面实现制图 这个图标是从2015 - 2024苏格兰全国因为冠心病死亡的人数
+ggplot(time_df, aes(x = year, y = easr)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 2, color = "steelblue") +
+  scale_x_continuous(breaks = 2015:2024) +
+  labs(
+    title = "Coronary Heart Disease Mortality in Scotland",
+    subtitle = "National mortality trend, 2015–2024",
+    x = "Year",
+    y = "European Age-Standardised Mortality Rate (per 100,000)"
+  ) +
+  theme_minimal()
+#年龄的数据表
+age_df <- chd_df %>%
+  filter(
+    area == "Scotland",
+    gender == "All",
+    age_group %in% c(
+      "0-44 years",
+      "45-64 years",
+      "65-74 years",
+      "75plus years"
+    )
+  ) %>%
+  mutate(
+    age_group = factor(
+      age_group,
+      levels = c(
+        "0-44 years",
+        "45-64 years",
+        "65-74 years",
+        "75plus years"
+      )
+    )
+  ) %>%
+  arrange(age_group, year)
+#制作年龄-死亡率的逐年图表（注意这里使用的是crude_rate 而不是easr）
+ggplot(
+  age_df,
+  aes(
+    x = year,
+    y = crude_rate,
+    color = age_group
+  )
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
+  scale_x_continuous(breaks = 2015:2024) +
+  labs(
+    title = "CHD Mortality by Age Group in Scotland",
+    subtitle = "Age-specific mortality trends, 2015–2024",
+    x = "Year",
+    y = "Crude Mortality Rate (per 100,000)",
+    color = "Age Group",
+    caption = "Note: 2024 data are provisional."
+  ) +
+  theme_minimal()
+#接下来制作性别的数据表
+gender_df <- chd_df %>%
+  filter(
+    area == "Scotland",
+    age_group == "All Ages",
+    gender %in% c("Male", "Female")
+  ) %>%
+  arrange(gender, year)
+#下面的区域是性别-冠心病死亡的逐年图表
+ggplot(
+  gender_df,
+  aes(
+    x = year,
+    y = crude_rate,
+    color = gender
+  )
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
+  scale_x_continuous(breaks = 2015:2024) +
+  labs(
+    title = "CHD Mortality by Sex in Scotland",
+    subtitle = "Crude mortality rates, 2015–2024",
+    x = "Year",
+    y = "Crude Mortality Rate (per 100,000)",
+    color = "Sex",
+    caption = "Note: 2024 data are provisional."
+  ) +
+  theme_minimal()
+```
 
 ## Data
 

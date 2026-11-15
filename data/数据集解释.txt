@@ -1,0 +1,5 @@
+1.dz_codes.csv 苏格兰地区代码对应的名称
+2. hd_activitybyca.csv 各地方行政区住院的数据
+3.hd_activitybyhbr.csv 各 NHS 卫生局住院数据
+4.hd_mortalitybyca.csv 各地方行政区死亡率
+5.hd_mortalitybyhbr.csv 各 NHS 卫生局死亡率
