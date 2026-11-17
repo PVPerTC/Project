@@ -301,6 +301,169 @@ ggplot(
   theme_minimal(base_size = 12)
 
 ```
+
+
+### Linear Regression Analysis
+
+Use the European age-standardised mortality rate (EASR) as our response variable.
+
+```{r regression-data, echo=FALSE}
+# Use the 10 selected Council Areas
+regression_df <- chd_df %>%
+  filter(
+    year >= 2015,
+    year <= 2023,
+    area %in% geographical_top_bottom$area,
+    age_group == "All Ages",
+    gender == "All"
+  )
+```
+
+### a simple linear regression model using only year to predict CHD mortality rates.
+
+```{r simple-regression, echo=FALSE}
+# Simple linear regression
+model1 <- lm(easr ~ year, data = regression_df)
+
+# Model results
+summary(model1)
+```
+
+The following plot shows the observed mortality rates and the fitted regression line.
+
+```{r simple-regression-plot, echo=FALSE}
+ggplot(regression_df, aes(x = year, y = easr)) +
+  geom_point(color = "steelblue", size = 2) +
+  geom_smooth(method = "lm", se = FALSE,
+              color = "red") +
+  scale_x_continuous(breaks = 2015:2023) +
+  labs(
+    title = "Simple Linear Regression",
+    subtitle = "CHD mortality rates in 10 Council Areas",
+    x = "Year",
+    y = "EASR (per 100,000)"
+  ) +
+  theme_minimal()
+```
+
+### Limitations of the Simple Model
+
+ The simple linear regression plot shows a slight downward trend in CHD mortality rates between 2015 and 2023. However, the observed mortality rates vary considerably across Council Areas within the same year.
+
+  This suggests that year alone may not adequately explain the variation in mortality rates.
+Therefore, I choose to extend the model by including Council Area as an additional predictor.
+
+### Multiple Linear Regression
+
+The multiple linear regression model includes both year and Council Area.
+
+This display the relationship between year and mortality rates while also accounting for differences between areas.
+
+```{r multiple-regression, echo=FALSE}
+# Multiple linear regression
+model2 <- lm(easr ~ year + area, data = regression_df)
+
+# Model results
+summary(model2)
+```
+
+###  Multiple Regression Plot
+
+use the fitted model to show the predicted mortality trends for each Council Area.
+
+```{r multiple-regression-plot, echo=FALSE}
+# Calculate predicted mortality rates
+regression_df$predicted_easr <- predict(model2)
+
+# Plot predicted trends for each area
+ggplot(regression_df,
+       aes(x = year, y = predicted_easr,
+           color = area)) +
+  geom_line(linewidth = 1) +
+  scale_x_continuous(breaks = 2015:2023) +
+  labs(
+    title = "Multiple Linear Regression",
+    subtitle = "Predicted CHD mortality trends by Council Area",
+    x = "Year",
+    y = "Predicted EASR (per 100,000)",
+    color = "Council Area"
+  ) +
+  theme_minimal()
+```
+
+The fitted lines show the predicted mortality rates for the ten Council Areas.
+
+Because the model uses a common year coefficient, the fitted lines have the same slope but different intercepts.
+
+###  Actual vs Predicted Mortality Rates
+
+```{r predicted-vs-actual, echo=FALSE}
+ggplot(regression_df,
+       aes(x = easr, y = predicted_easr)) +
+  geom_point(color = "steelblue", size = 2) +
+  geom_abline(slope = 1, intercept = 0,
+              linetype = "dashed", color = "red") +
+  labs(
+    title = "Actual vs Predicted Mortality Rates",
+    subtitle = "Multiple Linear Regression",
+    x = "Actual EASR (per 100,000)",
+    y = "Predicted EASR (per 100,000)"
+  ) +
+  theme_minimal()
+```
+
+The dashed red line represents perfect predictions. Points closer to this line indicate smaller prediction errors.
+
+###  Model Comparison
+
+We compare the two models using and adjusted R-squared and residual standard error.
+
+```{r regression-comparison, echo=FALSE}
+# Compare model performance
+comparison <- tibble(
+  Model = c("Simple", "Multiple"),
+  R_squared = c(
+    summary(model1)$r.squared,
+    summary(model2)$r.squared
+  ),
+  Adjusted_R_squared = c(
+    summary(model1)$adj.r.squared,
+    summary(model2)$adj.r.squared
+  ),
+  Residual_SE = c(
+    sigma(model1),
+    sigma(model2)
+  )
+)
+
+# Display comparison table
+knitr::kable(
+  comparison,
+  digits = 3,
+  caption = "Comparison of Linear Regression Models"
+)
+```
+
+A higher adjusted R-squared suggests that the model explains more variation after accounting for the number of predictors.
+
+A lower residual standard error indicates that the fitted values are generally closer to the observed mortality rates.
+
+These measures are able to assess whether adding Council Area improves the model.
+
+### Discussion and Limitations
+
+### Regression Results and Discussion
+
+The simple linear regression model showed a weak relationship between year and CHD mortality rates, with an R-squared value of 0.017. This means that year alone explained only 1.7% of the variation in mortality rates across the selected Council Areas.
+
+After adding Council Area to the multiple linear regression model, the R-squared increased to 0.743, and the adjusted R-squared increased from 0.006 to 0.711. The residual standard error also decreased from 32.986 to 17.796.
+
+These results suggest that including geographical location substantially improved the model's fit. The multiple regression plot also shows clear differences in predicted mortality rates between Council Areas, while the overall trend decreases over time.
+
+However, the analysis only includes ten Council Areas selected based on their mortality rates. Therefore, the findings may not represent all areas in Scotland.
+
+（AI used to assist with R code development, debugging, and improving the clarity of some written explanations in regession model)
+
 ## Data
 
 The dataset for this investigation is the Scottish Heart Disease Statistics. I utilized the mortality data categorized by Council Areas and filtered for overall heart disease mortality. During the data wrangling process using the tidyverse package, I joined the raw mortality data with the Data Zone Codes dictionary to convert alphanumeric zone codes into readable Council Area names. I also removed missing values 'NA' to maintain data quality.
