@@ -99,12 +99,7 @@ style_xaringan(
 )
 ```
 
-class: center, middle
 
-# Heart Disease Mortality in Scotland
-### Analyzing the Impact of Year, Age, Gender and Geography (2015-2024)
-
----
 
 ### National Trend of Coronary Heart Disease Mortality
 
