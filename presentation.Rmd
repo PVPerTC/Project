@@ -101,13 +101,41 @@ style_xaringan(
 
 class: center, middle
 
-## A statement of the overall goal / research question
+# Heart Disease Mortality in Scotland
+### Analyzing the Impact of Year, Age, Gender and Geography (2015-2024)
 
 ---
 
-class: inverse, center, middle
+### National Trend of Coronary Heart Disease Mortality
 
-# Section title
+.pull-left[
+&nbsp;
+]
+
+.pull-right[
+```{r national-trend-plot, echo=FALSE, fig.width=6, fig.height=4.5, out.width="100%"}
+#全国的趋势图
+time_df <- chd_df %>%
+  filter(
+    area == "Scotland",
+    age_group == "All Ages",
+    gender == "All"
+  ) %>%
+  arrange(year)
+#下面实现制图 这个图标是从2015 - 2024苏格兰全国因为冠心病死亡的人数
+ggplot(time_df, aes(x = year, y = easr)) +
+  geom_line(linewidth = 1.2, color = "steelblue") +
+  geom_point(size = 2.5, color = "steelblue") +
+  scale_x_continuous(breaks = 2015:2024) +
+  labs(
+    title = "Coronary Heart Disease Mortality in Scotland",
+    subtitle = "National mortality trend, 2015–2024",
+    x = "Year",
+    y = "European Age-Standardised Mortality Rate (per 100,000)"
+  ) +
+  theme_minimal(base_size = 13)
+```
+]
 
 ---
 
