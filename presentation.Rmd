@@ -1,6 +1,6 @@
 ---
-title: "Presentation title"
-subtitle: "Presentation subtitle (if any)"
+title: "Heart Disease Mortality in Scotland"
+subtitle: "Analyzing the Impact of Year, Age, Gender and Geography (2015-2024)"
 author: "Team name <br> Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li"
 institute: "University of Edinburgh"
 date: "`r Sys.Date()`"
@@ -40,7 +40,55 @@ knitr::opts_chunk$set(fig.retina = 3, dpi = 300, fig.width = 6, fig.asp = 0.618,
 
 ```{r load-data, include=FALSE}
 # Load your data here
+# 1. Load data加载数据
+df <- read_csv("data/hd_mortalitybyca.csv")
+dz_codes <- read_csv("data/dz_codes.csv")
 
+# 2. Create Council Area lookup table 制作地区和地区代码的对照表
+area <- dz_codes %>%
+  select(CA, CAName) %>%
+  distinct() %>%
+  drop_na(CA, CAName)
+
+# 3. Clean and prepare mortality data 清洗死亡数据表
+final_df <- df %>%
+  mutate(
+    year_provisional = str_ends(Year, "p"),
+    year = as.integer(str_remove(Year, "p"))
+  ) %>%
+  rename(
+    age_group = AgeGroup,
+    gender = Sex,
+    diagnosis = Diagnosis,
+    deaths = NumberOfDeaths,
+    crude_rate = CrudeRate,
+    easr = EASR,
+    ca = Ca
+  ) %>%
+  left_join(area, by = c("ca" = "CA")) %>%
+  mutate(
+    area = if_else(
+      ca == "S92000003",
+      "Scotland",
+      CAName
+    )
+  ) %>%
+  select(
+    year, year_provisional,
+    ca, area,
+    age_group, gender, diagnosis,
+    deaths, crude_rate, easr
+  )
+
+# 4. Validate cleaned data 只是验证数据是否有异常
+stopifnot(nrow(final_df) == nrow(df))
+stopifnot(!anyNA(final_df$area))
+stopifnot(!anyNA(final_df$year))
+
+
+# 5.筛选出冠心病 filter CHD
+chd_df <- final_df %>%
+  filter(diagnosis == "Coronary Heart Disease")
 ```
 
 ```{r include=FALSE}
@@ -171,7 +219,7 @@ kable(head(iris), format = "html")
 # Images
 
 ```{r castle, echo = FALSE, out.width = "55%", fig.align = "center", fig.cap = "Image credit: Photo by Jörg Angeli on Unsplash."}
-include_graphics("img/edinburgh-castle.jpg")
+
 ```
 
 Or you can also include a full page image. See next slide.
