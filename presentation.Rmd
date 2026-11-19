@@ -133,12 +133,61 @@ ggplot(time_df, aes(x = year, y = easr)) +
 ]
 
 ---
+### Coronary Heart Disease Mortality by Age Group
 
-# Hello World
+.pull-left[
+&nbsp;
+]
 
-- Click the `Knit` button to compile your presentation
-
-- Make sure to commit and push all resulting files to your GitHub repo
+.pull-right[
+```{r age-plot, echo=FALSE, fig.width=6, fig.height=4.5, out.width="100%"}
+#年龄的数据表
+age_df <- chd_df %>%
+  filter(
+    area == "Scotland",
+    gender == "All",
+    age_group %in% c(
+      "0-44 years",
+      "45-64 years",
+      "65-74 years",
+      "75plus years"
+    )
+  ) %>%
+  mutate(
+    age_group = factor(
+      age_group,
+      levels = c(
+        "0-44 years",
+        "45-64 years",
+        "65-74 years",
+        "75plus years"
+      )
+    )
+  ) %>%
+  arrange(age_group, year)
+#制作年龄-死亡率的逐年图表（注意这里使用的是crude_rate 而不是easr）
+ggplot(
+  age_df,
+  aes(
+    x = year,
+    y = crude_rate,
+    color = age_group
+  )
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
+  scale_x_continuous(breaks = 2015:2024) +
+  labs(
+    title = "CHD Mortality by Age Group in Scotland",
+    subtitle = "Age-specific mortality trends, 2015–2024",
+    x = "Year",
+    y = "Crude Mortality Rate (per 100,000)",
+    color = "Age Group",
+    caption = "Note: 2024 data are provisional."
+  ) +
+  theme_minimal()
+```
+]
 
 ---
 
