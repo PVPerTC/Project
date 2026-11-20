@@ -77,12 +77,12 @@ glimpse(final_df)
 ## Research Question
 
 As the years change, how do demographic factors (age and gender) and geographical location (areas) influence the overall mortality rates of heart disease in Scotland? The reason is that it is important to understand these differences in public health. By identifying which demographic groups are most vulnerable and which regions experience higher mortality rates, policymakers and healthcare providers can better allocate resources and design targeted interventions to reduce heart disease mortality across Scotland.
-```{r load-data, echo=FALSE}
+```{r load-data-1, echo=FALSE}
 #1.筛选出冠心病 filter CHD
 chd_df <- final_df %>%
   filter(diagnosis == "Coronary Heart Disease")
 ```
-```{r load-data, echo=FALSE}
+```{r national-trend-plot, echo=FALSE}
 #全国的趋势图
 time_df <- chd_df %>%
   filter(
@@ -104,7 +104,7 @@ ggplot(time_df, aes(x = year, y = easr)) +
   ) +
   theme_minimal()
 ```
-```{r load-data, echo=FALSE}
+```{r age-plot, echo=FALSE}
 #年龄的数据表
 age_df <- chd_df %>%
   filter(
@@ -151,7 +151,7 @@ ggplot(
   ) +
   theme_minimal()
 ```
-```{r load-data, echo=FALSE}
+```{r gender-plot, echo=FALSE}
 #接下来制作性别的数据表
 gender_df <- chd_df %>%
   filter(
@@ -182,7 +182,7 @@ ggplot(
   ) +
   theme_minimal()
 ```
-```{r load-data, echo=FALSE}
+```{r geography-plot, echo=FALSE}
 #下面制作地区的数据表
 geographical_df <- chd_df %>%
   filter(
@@ -252,7 +252,7 @@ ggplot(
     legend.position = "top"
   )
 ```
-```{r load-data, echo=FALSE}
+```{r geography-trend-plot, echo=FALSE}
 #下面是是为了实现不同地区逐年冠心病死亡的变化曲线（使用每年的EASR）
 geographical_trend_df <- chd_df %>%
   filter(
