@@ -101,7 +101,7 @@ style_xaringan(
 
 
 
-### National Trend of Coronary Heart Disease Mortality(2015-2024)
+### National Trend of Coronary Heart Disease Mortality (2015-2024)
 
 .pull-left[
 &nbsp;
@@ -133,7 +133,7 @@ ggplot(time_df, aes(x = year, y = easr)) +
 ]
 
 ---
-### Coronary Heart Disease Mortality by Age Group(2015-2024)
+### Coronary Heart Disease Mortality by Age Group (2015-2024)
 
 .pull-left[
 &nbsp;
@@ -191,7 +191,7 @@ ggplot(
 
 ---
 
-### Coronary Heart Disease Mortality by Sex(2015-2024)
+### Coronary Heart Disease Mortality by Sex (2015-2024)
 
 .pull-left[
 &nbsp;
@@ -233,7 +233,7 @@ ggplot(
 
 ---
 
-### Coronary Heart Disease Mortality by Geography(2015-2024)
+### Coronary Heart Disease Mortality by Geography (2015-2023)
 
 .pull-left[
 &nbsp;
@@ -314,23 +314,127 @@ ggplot(
 
 ---
 
+### Coronary Heart Disease Mortality Trends in High- and Low-Mortality Areas (2015-2023)
+
+.pull-left[
+&nbsp;
+]
+
+.pull-right[
+```{r geography-trend-plot, echo=FALSE, fig.width=6, fig.height=4.5, out.width="100%"}
+#下面是是为了实现不同地区逐年冠心病死亡的变化曲线（使用每年的EASR）
+geographical_trend_df <- chd_df %>%
+  filter(
+    year >= 2015,
+    year <= 2023,
+    area != "Scotland",
+    age_group == "All Ages",
+    gender == "All"
+  ) %>%
+  inner_join(
+    geographical_top_bottom %>%
+      select(area, highlight_group),
+    by = "area"
+  ) %>%
+  group_by(year, highlight_group) %>%
+  summarise(
+    mean_easr = mean(easr, na.rm = TRUE),
+    .groups = "drop"
+  )
+#下面进行绘图 这张图中的地区没有经过地区实际人口数的加权 只是简单的算术平均
+ggplot(
+  geographical_trend_df,
+  aes(
+    x = year,
+    y = mean_easr,
+    color = highlight_group
+  )
+) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2) +
+  scale_color_manual(
+    values = c(
+      "Top 5" = "#D55E00",
+      "Bottom 5" = "#0072B2"
+    )
+  ) +
+  scale_x_continuous(breaks = 2015:2023) +
+  labs(
+    title = "CHD Mortality Trends in High- and Low-Mortality Areas",
+    subtitle = "Five highest vs five lowest mean-EASR Council Areas, 2015–2023",
+    x = "Year",
+    y = "Mean annual EASR (per 100,000)",
+    color = "Area Group",
+    caption = "Groups defined by 2015–2023 mean EASR; unweighted averages of five areas per group."
+  ) +
+  theme_minimal(base_size = 12)
+
+```
+]
+
+---
+
+class: center, middle
+
+## A statement of the overall goal / research question
+
+---
+
+class: inverse, center, middle
+
+# Section title
+
+---
+
+# Hello World
+
+Click the `Knit` button to compile your presentation
+
+Make sure to commit and push all resulting files to your GitHub repo
+
+---
+
+class: inverse, middle, center
+
+# Using xaringan
+
+---
+
+# xaringan
+
+The presentation is created using the `xaringan` package
+
+Use `---` to separate slides and `--` for incremental builds
+
+--
+
+Like this
+
+---
 
 # Layouts
 
 You can use plain text
 
-- or bullet points
+or bullet points
 
 .pull-left[
+
 or text in two columns $^*$
-]
-.pull-right[
-- like
-- this
+
 ]
 
+.pull-right[
+
+like
+this
+]
+
+
 .footnote[
+
 [*] And add footnotes
+
 ]
 
 ---
