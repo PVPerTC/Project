@@ -443,6 +443,122 @@ knitr::kable(
   caption = "Comparison of Linear Regression Models"
 )
 ```
+```{r gender+year model echo = off}
+#整理数据 年龄分组
+demographic_df <- chd_df %>%
+  filter(
+    area == "Scotland",
+    year >= 2015,
+    year <= 2023,
+    age_group %in% c(
+      "0-44 years",
+      "45-64 years",
+      "65-74 years",
+      "75plus years"
+    ),
+    gender %in% c("Male", "Female")
+  ) %>%
+  mutate(
+    age_group = factor(
+      age_group,
+      levels = c(
+        "0-44 years",
+        "45-64 years",
+        "65-74 years",
+        "75plus years"
+      )
+    ),
+#整理数据 性别分组
+    gender = factor(
+      gender,
+      levels = c("Female", "Male")
+    ),
+    year_centered = year - 2015
+  )
+
+model3 <- lm(
+  crude_rate ~ year_centered + age_group + gender,
+  data = demographic_df
+)
+
+summary(model3)
+#对建模的假设“不同年龄段男女死亡率差距固定”的检查
+demographic_df %>%
+  group_by(age_group, gender) %>%
+  summarise(
+    mean_rate = mean(crude_rate),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    names_from = gender,
+    values_from = mean_rate
+  ) %>%
+  mutate(
+    gap = Male - Female
+  )
+#通过检查结果可以知道实际上差距很大 因此我们要引入age和gender的交互项进行建模
+```
+
+```{r model4 echo = off}
+#model4 
+model4 <- lm(
+  crude_rate ~ year_centered + age_group * gender,
+  data = demographic_df
+)
+
+summary(model4)
+#model4展现了良好的拟合效果Adjusted R-squared增加到了99%+ 但是仍然有问题 也即是假定0-44的女性死亡率每年下降 最终会导致负死亡率
+```
+
+```{r compare echo = off}
+#比较模型model3 和model4
+anova(model3, model4)
+#通过比对数据可以发现 F = 136.84，p 极小，RSS（残差平方和显著减小）支持引入交互项
+```
+
+
+```{r Test}
+diagnostic_df <- regression_df %>%
+  mutate(
+    fitted_value = fitted(model2),
+    residual = residuals(model2)
+  )
+ggplot(
+  diagnostic_df,
+  aes(x = year, y = residual)
+) +
+  geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    color = "grey50"
+  ) +
+  geom_line(color = "steelblue") +
+  geom_point(color = "steelblue") +
+  facet_wrap(~area, ncol = 2) +
+  labs(
+    title = "Residuals over Time by Council Area",
+    x = "Year",
+    y = "Residual"
+  ) +
+  theme_minimal()
+autocorrelation_df <- diagnostic_df %>%
+  group_by(area) %>%
+  arrange(year, .by_group = TRUE) %>%
+  summarise(
+    lag1_cor = cor(
+      residual,
+      lag(residual),
+      use = "complete.obs"
+    ),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(lag1_cor))
+
+autocorrelation_df
+x <- c(12, 8, 5, -3, -7)
+
+lag(x)
+```
 
 A higher adjusted R-squared suggests that the model explains more variation after accounting for the number of predictors.
 
