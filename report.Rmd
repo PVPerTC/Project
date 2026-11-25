@@ -1,6 +1,6 @@
 ---
 title: "Heart Disease Mortality in Scotland"
-author: "by Team-Name: Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li"
+author: "by : Zhuohang Li, Zihan Kong, Wenjie Li, Kitty Hou"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -12,30 +12,22 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r load-lib, include = FALSE}
 library(tidyverse)
-# Add any other libraries here
 library(dplyr)
-
-
 ```
 
 
 ```{r load-data, include=FALSE}
-# load your data here and any pre-processing/cleaning 
-#  that you need for your report.
-df <- read_csv("data/hd_mortalitybyca.csv")
-library(tidyverse)
-
-# 1. Load data加载数据
+# Load data
 df <- read_csv("data/hd_mortalitybyca.csv")
 dz_codes <- read_csv("data/dz_codes.csv")
 
-# 2. Create Council Area lookup table 制作地区和地区代码的对照表
+# Create Council Area lookup table
 area <- dz_codes %>%
   select(CA, CAName) %>%
   distinct() %>%
   drop_na(CA, CAName)
 
-# 3. Clean and prepare mortality data 清洗死亡数据表
+# Clean and prepare mortality data
 final_df <- df %>%
   mutate(
     year_provisional = str_ends(Year, "p"),
@@ -65,25 +57,48 @@ final_df <- df %>%
     deaths, crude_rate, easr
   )
 
-# 4. Validate cleaned data 只是验证数据是否有异常
+# Validate cleaned data
 stopifnot(nrow(final_df) == nrow(df))
 stopifnot(!anyNA(final_df$area))
 stopifnot(!anyNA(final_df$year))
-
-glimpse(final_df)
 ```
 
 
 ## Research Question
 
-As the years change, how do demographic factors (age and gender) and geographical location (areas) influence the overall mortality rates of heart disease in Scotland? The reason is that it is important to understand these differences in public health. By identifying which demographic groups are most vulnerable and which regions experience higher mortality rates, policymakers and healthcare providers can better allocate resources and design targeted interventions to reduce heart disease mortality across Scotland.
+As the years progress, how do demographic factors (age and sex) and geographical location (Council Areas) influence heart disease mortality rates in Scotland? Understanding these differences is critical for public health planning. By identifying which demographic groups are most vulnerable and which regions experience disproportionately higher mortality rates, policymakers and healthcare providers can better allocate resources and design targeted interventions to reduce heart disease mortality across Scotland.
+
+
+## Data Overview
+
+The dataset for this investigation is sourced from the Scottish Heart Disease Statistics published by Public Health Scotland, containing mortality records categorised by Council Areas from 2015 to 2024 (with 2024 figures marked as provisional). During the data wrangling process using the tidyverse package, we joined the raw mortality dataset with the Data Zone 2022 lookup dictionary to convert alphanumeric zone codes into readable Council Area names, removed missing entries, and filtered specifically for Coronary Heart Disease (CHD) as our primary focus.
+
+The cleaned dataset focuses on the following key variables:
+
+1. Year (year): Calendar year of death registration (2015–2024). For statistical modelling, we restricted the timeframe to 2015–2023 to avoid bias from provisional 2024 figures.
+
+2. Sex (gender): Biological sex differentiating male and female mortality (Male, Female, and All).
+
+3. Age Group (age_group): Demographic age brackets (0-44 years, 45-64 years, 65-74 years, 75plus years, and All Ages).
+
+4. Area (area): The 32 Scottish Council Areas alongside the national aggregate (Scotland).
+
+5. Mortality Metrics (easr and crude_rate): We use the European Age-Standardised Mortality Rate (easr, per 100,000 population) for regional comparisons to control for differing age structures across Council Areas, and the Crude Mortality Rate (crude_rate, per 100,000 population) for age- and sex-specific analyses.
+
+## Exploratory Data Analysis
+
 ```{r load-data-1, echo=FALSE}
-#1.筛选出冠心病 filter CHD
+# filter CHD
 chd_df <- final_df %>%
   filter(diagnosis == "Coronary Heart Disease")
 ```
+
+### National Mortality Trend (2015–2024)
+
+To establish a national baseline, we first examined the overall trend in CHD mortality across Scotland from 2015 to 2024. As shown below, the national age-standardised mortality rate declined steadily over the decade, with a slight flattening around 2020–2021 before continuing downward.
+
 ```{r national-trend-plot, echo=FALSE}
-#全国的趋势图
+# National trend chart
 time_df <- chd_df %>%
   filter(
     area == "Scotland",
@@ -91,7 +106,8 @@ time_df <- chd_df %>%
     gender == "All"
   ) %>%
   arrange(year)
-#下面实现制图 这个图标是从2015 - 2024苏格兰全国因为冠心病死亡的人数
+
+# The number of deaths from coronary heart disease in Scotland nationwide from 2015 to 2024
 ggplot(time_df, aes(x = year, y = easr)) +
   geom_line(linewidth = 1, color = "steelblue") +
   geom_point(size = 2, color = "steelblue") +
@@ -104,8 +120,18 @@ ggplot(time_df, aes(x = year, y = easr)) +
   ) +
   theme_minimal()
 ```
+
+### Demographic Differences: Age and Sex
+
+Breaking down national crude mortality rates by age group and sex reveals strong demographic disparities:
+
+Age Group: Mortality rates rise sharply with age. While rates in the 0-44 years group remain close to zero, mortality increases substantially in older cohorts and peaks in the 75plus years group, which also exhibits the largest absolute decline between 2015 and 2024.
+
+Sex: Male crude mortality rates remain consistently more than twice as high as female rates throughout the entire observation period.
+
+
 ```{r age-plot, echo=FALSE}
-#年龄的数据表
+# Age data table
 age_df <- chd_df %>%
   filter(
     area == "Scotland",
@@ -129,7 +155,8 @@ age_df <- chd_df %>%
     )
   ) %>%
   arrange(age_group, year)
-#制作年龄-死亡率的逐年图表（注意这里使用的是crude_rate 而不是easr）
+
+# Create a yearly chart of age at death – mortality rate
 ggplot(
   age_df,
   aes(
@@ -151,8 +178,10 @@ ggplot(
   ) +
   theme_minimal()
 ```
+
+
 ```{r gender-plot, echo=FALSE}
-#接下来制作性别的数据表
+# Sex data table
 gender_df <- chd_df %>%
   filter(
     area == "Scotland",
@@ -160,7 +189,7 @@ gender_df <- chd_df %>%
     gender %in% c("Male", "Female")
   ) %>%
   arrange(gender, year)
-#下面的区域是性别-冠心病死亡逐年图表
+# Gender – Annual Death Rates Due to Coronary Heart Disease
 ggplot(
   gender_df,
   aes(
@@ -182,8 +211,13 @@ ggplot(
   ) +
   theme_minimal()
 ```
+
+### Geographical Differences Across Council Areas
+
+To explore regional variation, we computed the mean annual EASR (2015–2023) across all Scottish Council Areas and compared the five highest-mortality authorities with the five lowest-mortality authorities. Post-industrial and urban areas such as East Ayrshire, Glasgow City, and Clackmannanshire experienced mean mortality rates nearly double those of East Renfrewshire and East Dunbartonshire, and this regional gap persisted throughout 2015–2023.
+
 ```{r geography-plot, echo=FALSE}
-#下面制作地区的数据表
+# Area data table
 geographical_df <- chd_df %>%
   filter(
     year >= 2015,
@@ -198,6 +232,7 @@ geographical_df <- chd_df %>%
     .groups = "drop"
   ) %>%
   arrange(desc(mean_easr))
+
 geographical_highlight_df <- geographical_df %>%
   arrange(desc(mean_easr)) %>%
   mutate(
@@ -210,7 +245,8 @@ geographical_highlight_df <- geographical_df %>%
   )
 geographical_top_bottom <- geographical_highlight_df %>%
   filter(highlight_group != "Middle")
-#下面进行地区-冠心病死亡的2015-2023年平均图表制作
+
+# Regional Average Charts for Deaths from Coronary Heart Disease from 2015 to 2023
 ggplot(
   geographical_top_bottom,
   aes(
@@ -252,8 +288,10 @@ ggplot(
     legend.position = "top"
   )
 ```
+
+
 ```{r geography-trend-plot, echo=FALSE}
-#下面是是为了实现不同地区逐年冠心病死亡的变化曲线（使用每年的EASR）
+# The variation curves of coronary heart disease deaths across different regions over time (using the annual EASR data)
 geographical_trend_df <- chd_df %>%
   filter(
     year >= 2015,
@@ -272,7 +310,8 @@ geographical_trend_df <- chd_df %>%
     mean_easr = mean(easr, na.rm = TRUE),
     .groups = "drop"
   )
-#下面进行绘图 这张图中的地区没有经过地区实际人口数的加权 只是简单的算术平均
+
+# Drawings (without any weighting based on the actual population of the region; it’s simply a simple arithmetic calculation)
 ggplot(
   geographical_trend_df,
   aes(
@@ -299,13 +338,14 @@ ggplot(
     caption = "Groups defined by 2015–2023 mean EASR; unweighted averages of five areas per group."
   ) +
   theme_minimal(base_size = 12)
-
 ```
 
 
-### Linear Regression Analysis
+## Linear Regression Analysis
 
-Use the European age-standardised mortality rate (EASR) as our response variable.
+### Regional Modelling: Simple vs. Multiple Linear Regression
+
+To quantify the effects of time and geographical location, we used the European Age-Standardised Mortality Rate (easr) across the 10 selected Council Areas (2015–2023) as our response variable.
 
 ```{r regression-data, echo=FALSE}
 # Use the 10 selected Council Areas
@@ -319,7 +359,9 @@ regression_df <- chd_df %>%
   )
 ```
 
-### a simple linear regression model using only year to predict CHD mortality rates.
+#### Simple Linear Regression (Model 1)
+
+We first fitted a simple linear regression model using only year to predict CHD mortality rates.
 
 ```{r simple-regression, echo=FALSE}
 # Simple linear regression
@@ -348,16 +390,11 @@ ggplot(regression_df, aes(x = year, y = easr)) +
 
 ### Limitations of the Simple Model
 
- The simple linear regression plot shows a slight downward trend in CHD mortality rates between 2015 and 2023. However, the observed mortality rates vary considerably across Council Areas within the same year.
+The simple linear regression plot shows a slight downward trend in CHD mortality rates between 2015 and 2023 ($R^2 = 0.017$, $p = 0.216$). However, the observed mortality rates vary considerably across Council Areas within the same year. This indicates that year alone cannot adequately explain the variation in mortality rates. Therefore, we extended the model by including Council Area (area) as an additional predictor.
 
-  This suggests that year alone may not adequately explain the variation in mortality rates.
-Therefore, I choose to extend the model by including Council Area as an additional predictor.
+#### Multiple Linear Regression (Model 2)
 
-### Multiple Linear Regression
-
-The multiple linear regression model includes both year and Council Area.
-
-This display the relationship between year and mortality rates while also accounting for differences between areas.
+The multiple linear regression model includes both year and area, capturing the overall relationship between time and mortality rates while accounting for baseline differences between regions.
 
 ```{r multiple-regression, echo=FALSE}
 # Multiple linear regression
@@ -367,9 +404,9 @@ model2 <- lm(easr ~ year + area, data = regression_df)
 summary(model2)
 ```
 
-###  Multiple Regression Plot
+### Multiple Regression Plot
 
-use the fitted model to show the predicted mortality trends for each Council Area.
+The plot below uses the fitted multiple regression model to display the predicted mortality trends for each Council Area. Because the model uses a common year coefficient ($\beta_{\text{year}} = -1.677$, $p = 0.024$), the fitted lines share the same downward slope but have distinct intercepts reflecting regional differences.
 
 ```{r multiple-regression-plot, echo=FALSE}
 # Calculate predicted mortality rates
@@ -391,11 +428,7 @@ ggplot(regression_df,
   theme_minimal()
 ```
 
-The fitted lines show the predicted mortality rates for the ten Council Areas.
-
-Because the model uses a common year coefficient, the fitted lines have the same slope but different intercepts.
-
-###  Actual vs Predicted Mortality Rates
+### Actual vs Predicted Mortality Rates
 
 ```{r predicted-vs-actual, echo=FALSE}
 ggplot(regression_df,
@@ -414,9 +447,9 @@ ggplot(regression_df,
 
 The dashed red line represents perfect predictions. Points closer to this line indicate smaller prediction errors.
 
-###  Model Comparison
+### Regional Model Comparison
 
-We compare the two models using and adjusted R-squared and residual standard error.
+We compared the two regional models using $R^2$, adjusted $R^2$, and residual standard error. A higher adjusted $R^2$ indicates that the model explains more variation after accounting for the number of predictors, while a lower residual standard error reflects closer alignment with observed rates.
 
 ```{r regression-comparison, echo=FALSE}
 # Compare model performance
@@ -443,8 +476,15 @@ knitr::kable(
   caption = "Comparison of Linear Regression Models"
 )
 ```
+
+### Demographic Modelling: Age, Sex, and Interaction Effects
+
+Next, we examined how demographic factors influence national crude mortality rates (crude_rate) between 2015 and 2023, centering year at 2015 (year_centered = year - 2015).
+
+We first fitted an additive model (Model 3: crude_rate ~ year_centered + age_group + gender), which assumes a constant mortality gap between males and females across all age groups. However, checking the mean mortality rates by age and sex shows that the sex gap widens dramatically with age—from 3.45 per 100,000 in the 0-44 years group to 419.57 per 100,000 in the 75plus years group.
+
 ```{r gender-year model,echo =FALSE}
-#整理数据 年龄分组
+# Data organization – Age groups
 demographic_df <- chd_df %>%
   filter(
     area == "Scotland",
@@ -468,7 +508,7 @@ demographic_df <- chd_df %>%
         "75plus years"
       )
     ),
-#整理数据 性别分组
+# Data organization – Sex groups
     gender = factor(
       gender,
       levels = c("Female", "Male")
@@ -482,7 +522,7 @@ model3 <- lm(
 )
 
 summary(model3)
-#对建模的假设“不同年龄段男女死亡率差距固定”的检查
+# Check on the modeling assumption that “the difference in mortality rates between men and women across different age groups is constant”
 demographic_df %>%
   group_by(age_group, gender) %>%
   summarise(
@@ -494,10 +534,12 @@ demographic_df %>%
     values_from = mean_rate
   ) %>%
   mutate(
-    gap = Male - Female
+    Gap = Male - Female
   )
-#通过检查结果可以知道实际上差距很大 因此我们要引入age和gender的交互项进行建模
+# From the examination results, it can be seen that there is a significant difference in reality. Therefore, we need to introduce an interaction term between age and gender for modeling.
 ```
+
+To capture this compounding effect, we introduced an interaction term between age group and sex (Model 4: crude_rate ~ year_centered + age_group * gender).
 
 ```{r model4, echo = FALSE}
 #model4 
@@ -507,16 +549,20 @@ model4 <- lm(
 )
 
 summary(model4)
-#model4展现了良好的拟合效果Adjusted R-squared增加到了99%+ 但是仍然有问题 也即是假定0-44的女性死亡率每年下降 最终会导致负死亡率
+# Model 4 shows good fitting performance; the Adjusted R-squared value increases to over 99%. However, there are still issues. That is, the assumption that the female mortality rate decreases by 0–44 per year leads to a negative mortality rate in the end.
 ```
 
+An Analysis of Variance (ANOVA) comparing Model 3 and Model 4 confirms that adding the interaction term significantly improves model fit ($F = 136.84$, $p < 2.2 \times 10^{-16}$), substantially reducing the residual sum of squares (RSS) and increasing adjusted $R^2$ from 0.9490 to 0.9929.
+
 ```{r compare, echo = FALSE}
-#比较模型model3 和model4
+# Compare model3 and model4
 anova(model3, model4)
-#通过比对数据可以发现 F = 136.84，p 极小，RSS（残差平方和显著减小）支持引入交互项
+# By comparing the data, it can be seen that F = 136.84 and p is very small. The significant reduction in RSS (residual sum of squares) indicates that the interaction term should be introduced.
 ```
+
+
 ```{r demographic-model-comparison, echo=FALSE, fig.width=10, fig.height=8}
-#准备数据
+# Preparing data
 demographic_comparison_df <- demographic_df %>%
   mutate(
     model3_fitted = fitted(model3),
@@ -531,7 +577,7 @@ demographic_comparison_df <- demographic_df %>%
     names_to = "source",
     values_to = "rate"
   )
-#绘制图表1
+# Draw Chart 1
 ggplot(
   demographic_comparison_df,
   aes(x = year, y = rate, color = source)
@@ -583,8 +629,9 @@ ggplot(
     plot.title = element_text(face = "bold")
   )
 ```
+
 ```{r echo = FALSE}
-#model3 和 model4 数据对比展示
+# Compare model3 and model4
 demographic_model_comparison <- tibble(
   Model = c("Model 3", "Model 4"),
 
@@ -614,19 +661,26 @@ knitr::kable(
   digits = 4,
   caption = "Comparison of Demographic Regression Models"
 )
-
 ```
 
+
 ```{r model4-diagnostics, echo=FALSE, fig.width=10, fig.height=4.5}
-#model4 残差分析
+# model4 Residual analysis
 par(mfrow = c(1, 2))
 
 plot(model4, which = c(1, 2))
 
 par(mfrow = c(1, 1))
-#总结:Residual diagnostics suggest potential heteroscedasticity and departures from normality, so statistical significance should be interpreted with caution.
+# Residual diagnostics suggest potential heteroscedasticity and departures from normality, so statistical significance should be interpreted with caution.
 ```
 
+### Model Diagnostics
+
+Finally, we evaluated residual behaviour to check the underlying assumptions of our linear models:
+
+1. Temporal Autocorrelation in Model 2: Plotting residuals over time across the 10 Council Areas reveals noticeable temporal patterns and positive lag-1 autocorrelation in several regions (such as East Dunbartonshire and West Dunbartonshire), indicating multi-year local fluctuations that a single linear slope cannot fully capture.
+
+2. Heteroscedasticity and Boundary Issues in Model 4: Residual diagnostics for Model 4 suggest potential heteroscedasticity (variance increasing with higher mortality rates in older age groups) and departures from normality, meaning p-values should be interpreted with caution. Moreover, because Model 4 assumes a uniform annual decline across all groups, fitted values for 0-44 years females eventually fall below zero, which is impossible for a mortality rate.
 
 
 ```{r Test, echo = FALSE}
@@ -672,57 +726,23 @@ x <- c(12, 8, 5, -3, -7)
 lag(x)
 ```
 
-A higher adjusted R-squared suggests that the model explains more variation after accounting for the number of predictors.
+## Summary of Findings
 
-A lower residual standard error indicates that the fitted values are generally closer to the observed mortality rates.
+Our findings show that while overall CHD mortality in Scotland declined between 2015 and 2023, both geographical location and demographic characteristics strongly shape mortality outcomes:
 
-These measures are able to assess whether adding Council Area improves the model.
+1. Geographical Variation: Adding Council Area to the regional regression model increased $R^2$ from 0.017 to 0.743 (and adjusted $R^2$ from 0.006 to 0.711), while reducing the residual standard error from 32.986 to 17.796. This confirms that regional disparities account for the majority of variation across these areas.
 
-### Discussion and Limitations
+2. Demographic Interaction: Incorporating the interaction between age group and sex significantly improved the demographic model ($R^2 = 0.9937$), demonstrating that the excess mortality experienced by males widens substantially in middle and older age groups rather than remaining constant.
 
-### Regression Results and Discussion
+## Limitations and Ethical Considerations
 
-The simple linear regression model showed a weak relationship between year and CHD mortality rates, with an R-squared value of 0.017. This means that year alone explained only 1.7% of the variation in mortality rates across the selected Council Areas.
+1. Subset Selection: The regional regression models only included ten Council Areas selected from the highest and lowest mortality extremes. Therefore, the findings may not represent intermediate regions across Scotland.
 
-After adding Council Area to the multiple linear regression model, the R-squared increased to 0.743, and the adjusted R-squared increased from 0.006 to 0.711. The residual standard error also decreased from 32.986 to 17.796.
+2. Linear Model Assumptions: Assuming a single constant annual slope across all regions and demographic cohorts can lead to residual autocorrelation and unrealistic negative rate predictions in low-mortality groups (0-44 years females). Future work could apply Poisson or generalised linear models to address non-negativity and heteroscedasticity.
 
-These results suggest that including geographical location substantially improved the model's fit. The multiple regression plot also shows clear differences in predicted mortality rates between Council Areas, while the overall trend decreases over time.
+3. Aggregated Data and Ethics: Because the dataset consists of publicly available, aggregated population statistics from Public Health Scotland, there are no individual privacy concerns. However, because the data are aggregated at the Council Area level, we cannot infer individual-level risk factors (such as smoking or socioeconomic deprivation), and care should be taken to interpret regional differences in terms of healthcare resource allocation rather than stigmatising specific communities.
 
-However, the analysis only includes ten Council Areas selected based on their mortality rates. Therefore, the findings may not represent all areas in Scotland.
-
-（AI used to assist with R code development, debugging, and improving the clarity of some written explanations in regession model)
-
-## Data
-
-The dataset for this investigation is the Scottish Heart Disease Statistics. I utilized the mortality data categorized by Council Areas and filtered for overall heart disease mortality. During the data wrangling process using the tidyverse package, I joined the raw mortality data with the Data Zone Codes dictionary to convert alphanumeric zone codes into readable Council Area names. I also removed missing values 'NA' to maintain data quality.
-
-The final cleaned dataset focuses on four key variables for our investigation:
-1. Year: The variable tracking mortality trends.
-2. Gender: A variable differentiating male and female mortality.
-3. Age_group: Demographic brackets (0-44 years, 45-64 years, 65-74 years, under 75 years and 75+ years).
-4. Area: The Scottish Council Areas, which is necessary for regional comparison.
-
-
-## Findings
-
-The write-up of your project and findings go here. 
-
-Think of this as the text of your presentation with some extra detail to cover what there was not time to discuss in the presentation. This might include any assumptions you made when doing your analysis, any limitations of the work you have done or any ideas you have for future work. Feel free to split this section into subsections to make it easier to read. 
-
-The length should be roughly 1,500 words. 
-If you want to use a word count addin, you can install this by copying and pasting the following into RStudio:
-
-`devtools::install_github("benmarwick/wordcountaddin", type = "source", dependencies = TRUE)`
-
-You will then need to restart RStudio. Once you have done that, select the text you want to count the words of, go to Addins, and select the `Word count` addin.
-This addin counts words using two different algorithms, but the results should be similar and as long as you're in the ballpark of 1,500 words, you're good! 
-The addin will ignore code chunks and only count the words in prose. If you don't want to use the addin you can always copy and paste the text into Microsoft Word to do a Word Count!
-
-You can also load your data here and present any analysis results / plots.
-Make sure to hide your code with  `echo = FALSE` unless the point you are trying to make is about the code itself, in which case you should show your code.
-
-
-
+(Note: Generative AI was used to assist with R code debugging and improving the clarity of written explanations.)
 
 
 ## References
