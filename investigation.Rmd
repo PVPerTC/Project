@@ -1,6 +1,6 @@
 ---
 title: "IDS investigation worksheet"
-author: "by Team-Name: Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li"
+author: "by: Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li"
 date: "`r Sys.Date()`"
 output: html_document
 ---
