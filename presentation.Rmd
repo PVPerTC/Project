@@ -133,6 +133,12 @@ style_xaringan(
 
 ---
 
+class: center, middle
+
+## Exploratory Data Analysis
+
+---
+
 ### National Trend of Coronary Heart Disease Mortality (2015-2024)
 
 .pull-left[
@@ -396,11 +402,9 @@ ggplot(
 
 ---
 
+class: center, middle
+
 ## Linear Regression Analysis
-
-### Regional Modelling: Simple vs. Multiple Linear Regression
-
-To quantify the effects of time and geographical location, we used the European Age-Standardised Mortality Rate (easr) across the 10 selected Council Areas (2015–2023) as our response variable.
 
 ```{r regression-data, echo=FALSE}
 # Use the 10 selected Council Areas
@@ -414,21 +418,17 @@ regression_df <- chd_df %>%
   )
 ```
 
-#### Simple Linear Regression (Model 1)
+---
 
-We first fitted a simple linear regression model using only year to predict CHD mortality rates.
+### Regional Modelling: Simple vs. Multiple Linear Regression
 
 ```{r simple-regression, echo=FALSE}
 # Simple linear regression
 model1 <- lm(easr ~ year, data = regression_df)
-
-# Model results
-summary(model1)
 ```
 
-The following plot shows the observed mortality rates and the fitted regression line.
-
-```{r simple-regression-plot, echo=FALSE}
+.pull-left[
+```{r simple-regression-plot, echo=FALSE, warning=FALSE, message=FALSE}
 ggplot(regression_df, aes(x = year, y = easr)) +
   geom_point(color = "steelblue", size = 2) +
   geom_smooth(method = "lm", se = FALSE,
@@ -440,31 +440,16 @@ ggplot(regression_df, aes(x = year, y = easr)) +
     x = "Year",
     y = "EASR (per 100,000)"
   ) +
-  theme_minimal()
+  theme_minimal(base_size = 12)
 ```
-
-### Limitations of the Simple Model
-
-The simple linear regression plot shows a slight downward trend in CHD mortality rates between 2015 and 2023 ($R^2 = 0.017$, $p = 0.216$). However, the observed mortality rates vary considerably across Council Areas within the same year. This indicates that year alone cannot adequately explain the variation in mortality rates. Therefore, we extended the model by including Council Area (area) as an additional predictor.
-
----
-
-#### Multiple Linear Regression (Model 2)
-
-The multiple linear regression model includes both year and area, capturing the overall relationship between time and mortality rates while accounting for baseline differences between regions.
+]
 
 ```{r multiple-regression, echo=FALSE}
 # Multiple linear regression
 model2 <- lm(easr ~ year + area, data = regression_df)
-
-# Model results
-summary(model2)
 ```
 
-### Multiple Regression Plot
-
-The plot below uses the fitted multiple regression model to display the predicted mortality trends for each Council Area. Because the model uses a common year coefficient ($\beta_{\text{year}} = -1.677$, $p = 0.024$), the fitted lines share the same downward slope but have distinct intercepts reflecting regional differences.
-
+.pull-right[
 ```{r multiple-regression-plot, echo=FALSE}
 # Calculate predicted mortality rates
 regression_df$predicted_easr <- predict(model2)
@@ -482,8 +467,15 @@ ggplot(regression_df,
     y = "Predicted EASR (per 100,000)",
     color = "Council Area"
   ) +
-  theme_minimal()
+  theme_minimal(base_size = 12)
 ```
+]
+
+- **Model 1(Year only):**  $R^2 = 0.017$, $p = 0.216$. The observed mortality rates vary considerably across Council Areas within the same year.
+
+- **Model 2(Year + Area):** Adding Council Area increased $R^2$ to **0.743** and reduced the residual standard error  to 17.796. 
+
+- **Conclusion:** This confirms that regional disparities account for the majority of variation across these areas.
 
 ---
 
