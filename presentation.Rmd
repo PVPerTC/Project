@@ -1,7 +1,7 @@
 ---
 title: "Heart Disease Mortality in Scotland"
 subtitle: "Analyzing the Impact of Year, Age, Gender and Geography (2015-2024)"
-author: "Team name <br> Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li"
+author: "<br> Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li"
 institute: "University of Edinburgh"
 date: "`r Sys.Date()`"
 output:
@@ -35,7 +35,7 @@ library(xaringanthemer)
 
 ```{r setup, include=FALSE}
 # For better figure resolution
-knitr::opts_chunk$set(fig.retina = 3, dpi = 300, fig.width = 6, fig.asp = 0.618, out.width = "80%")
+knitr::opts_chunk$set(fig.retina = 3, dpi = 300, fig.width = 8, fig.height = 5, out.width = "100%")
 ```
 
 ```{r load-data, include=FALSE}
@@ -95,7 +95,8 @@ chd_df <- final_df %>%
 
 #Background image
 style_xaringan(
-  title_slide_background_image = "img/confetti.jpg"
+  title_slide_background_color = "#1F3A5F",
+  title_slide_text_color = "#FFFFFF"
 )
 ```
 
@@ -108,7 +109,7 @@ style_xaringan(
 ]
 
 .pull-right[
-```{r national-trend-plot, echo=FALSE, fig.width=6, fig.height=4.5, out.width="100%"}
+```{r national-trend-plot, echo=FALSE}
 #全国的趋势图
 time_df <- chd_df %>%
   filter(
@@ -123,8 +124,7 @@ ggplot(time_df, aes(x = year, y = easr)) +
   geom_point(size = 2.5, color = "steelblue") +
   scale_x_continuous(breaks = 2015:2024) +
   labs(
-    title = "Coronary Heart Disease Mortality in Scotland",
-    subtitle = "National mortality trend, 2015–2024",
+    subtitle = "European Age-Standardised Rate, 2015–2024 (2024 provisional)",
     x = "Year",
     y = "European Age-Standardised Mortality Rate (per 100,000)"
   ) +
@@ -140,7 +140,7 @@ ggplot(time_df, aes(x = year, y = easr)) +
 ]
 
 .pull-right[
-```{r age-plot, echo=FALSE, fig.width=6, fig.height=4.5, out.width="100%"}
+```{r age-plot, echo=FALSE}
 #年龄的数据表
 age_df <- chd_df %>%
   filter(
@@ -178,8 +178,7 @@ ggplot(
   geom_point(size = 2.5) +
   scale_x_continuous(breaks = 2015:2024) +
   labs(
-    title = "CHD Mortality by Age Group in Scotland",
-    subtitle = "Age-specific mortality trends, 2015–2024",
+    subtitle = "Crude rate by age group (2024 provisional)",
     x = "Year",
     y = "Crude Mortality Rate (per 100,000)",
     color = "Age Group",
@@ -198,7 +197,7 @@ ggplot(
 ]
 
 .pull-right[
-```{r gender-plot, echo=FALSE, fig.width=6, fig.height=4.5, out.width="100%"}
+```{r gender-plot, echo=FALSE}
 #接下来制作性别的数据表
 gender_df <- chd_df %>%
   filter(
@@ -220,8 +219,7 @@ ggplot(
   geom_point(size = 2.5) +
   scale_x_continuous(breaks = 2015:2024) +
   labs(
-    title = "CHD Mortality by Sex in Scotland",
-    subtitle = "Crude mortality rates, 2015–2024",
+    subtitle = "Crude rate by sex, All Ages (2024 provisional)",
     x = "Year",
     y = "Crude Mortality Rate (per 100,000)",
     color = "Sex",
@@ -240,7 +238,7 @@ ggplot(
 ]
 
 .pull-right[
-```{r geography-plot, echo=FALSE, fig.width=6, fig.height=4.5, out.width="100%"}
+```{r geography-plot, echo=FALSE}
 #下面制作地区的数据表
 geographical_df <- chd_df %>%
   filter(
@@ -294,8 +292,7 @@ ggplot(
     y = max(geographical_top_bottom$mean_easr) * 1.12
   ) +
   labs(
-    title = "Geographical Differences in CHD Mortality",
-    subtitle = "Top 5 and Bottom 5 Council Areas, 2015–2023",
+    subtitle = "Top 5 vs Bottom 5 Council Areas by mean EASR, 2015–2023",
     x = "Council Area",
     y = "Mean annual EASR (per 100,000)",
     fill = NULL,
@@ -306,7 +303,6 @@ ggplot(
     panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
     axis.text.y = element_text(size = 11),
-    plot.title = element_text(face = "bold"),
     legend.position = "top"
   )
 ```
@@ -321,7 +317,7 @@ ggplot(
 ]
 
 .pull-right[
-```{r geography-trend-plot, echo=FALSE, fig.width=6, fig.height=4.5, out.width="100%"}
+```{r geography-trend-plot, echo=FALSE}
 #下面是是为了实现不同地区逐年冠心病死亡的变化曲线（使用每年的EASR）
 geographical_trend_df <- chd_df %>%
   filter(
@@ -360,7 +356,6 @@ ggplot(
   ) +
   scale_x_continuous(breaks = 2015:2023) +
   labs(
-    title = "CHD Mortality Trends in High- and Low-Mortality Areas",
     subtitle = "Five highest vs five lowest mean-EASR Council Areas, 2015–2023",
     x = "Year",
     y = "Mean annual EASR (per 100,000)",
