@@ -222,6 +222,8 @@ ggplot(
   geom_point(size = 1.5) +
   scale_x_continuous(breaks = 2015:2024) +
   labs(
+    title = "CHD Mortality by Age Group in Scotland",
+    subtitle = "Age-specific mortality trends, 2015–2024",
     x = "Year",
     y = "Crude Mortality Rate (per 100,000)",
     color = "Age Group"
@@ -253,6 +255,8 @@ ggplot(
   geom_point(size = 1.5) +
   scale_x_continuous(breaks = 2015:2024) +
   labs(
+    title = "CHD Mortality by Sex in Scotland",
+    subtitle = "Crude mortality rates, 2015–2024",
     x = "Year",
     y = "Crude Mortality Rate (per 100,000)",
     color = "Sex"
@@ -264,6 +268,8 @@ ggplot(
 - **Age Group:** Mortality rates rise sharply with age. While rates in the 0-44 years group remain close to zero, mortality increases substantially in older cohorts and peaks in the 75plus years group.
 
 - **Sex:** Male crude mortality rates remain consistently more than twice as high as female rates.
+
+- *(2024 data are provisional)*
 
 ---
 
@@ -331,6 +337,8 @@ ggplot(
     y = max(geographical_top_bottom$mean_easr) * 1.12
   ) +
   labs(
+    title = "Geographical Differences in CHD Mortality",
+    subtitle = "Top 5 and Bottom 5 Council Areas, 2015–2023",
     x = "Council Area",
     y = "Mean annual EASR (per 100,000)",
     fill = NULL
@@ -387,6 +395,8 @@ ggplot(
   ) +
   scale_x_continuous(breaks = 2015:2023) +
   labs(
+    title = "CHD Mortality Trends in High- and Low-Mortality Areas",
+    subtitle = "Five highest vs five lowest mean-EASR Council Areas, 2015–2023",
     x = "Year",
     y = "Mean annual EASR (per 100,000)",
     color = "Area Group"
@@ -471,9 +481,9 @@ ggplot(regression_df,
 ```
 ]
 
-- **Model 1(Year only):**  $R^2 = 0.017$, $p = 0.216$. The observed mortality rates vary considerably across Council Areas within the same year.
+- **Model 1(Year only):**  $R^2 = 0.017$, $p = 0.216$.  Year alone cannot adequately explain the variation.
 
-- **Model 2(Year + Area):** Adding Council Area increased $R^2$ to **0.743** and reduced the residual standard error  to 17.796. 
+- **Model 2(Year + Area):** Adding Council Area increased $R^2$ to **0.743** and reduced the residual SE to 17.796. 
 
 - **Conclusion:** This confirms that regional disparities account for the majority of variation across these areas.
 
@@ -481,14 +491,13 @@ ggplot(regression_df,
 
 ### Actual vs Predicted Mortality Rates
 
-```{r predicted-vs-actual, echo=FALSE}
+```{r predicted-vs-actual, echo=FALSE, fig.height=3.5, out.width="100%"}
 ggplot(regression_df,
        aes(x = easr, y = predicted_easr)) +
   geom_point(color = "steelblue", size = 2) +
   geom_abline(slope = 1, intercept = 0,
               linetype = "dashed", color = "red") +
   labs(
-    title = "Actual vs Predicted Mortality Rates",
     subtitle = "Multiple Linear Regression",
     x = "Actual EASR (per 100,000)",
     y = "Predicted EASR (per 100,000)"
@@ -500,43 +509,7 @@ The dashed red line represents perfect predictions. Points closer to this line i
 
 ---
 
-### Regional Model Comparison
-
-We compared the two regional models using $R^2$, adjusted $R^2$, and residual standard error. A higher adjusted $R^2$ indicates that the model explains more variation after accounting for the number of predictors, while a lower residual standard error reflects closer alignment with observed rates.
-
-```{r regression-comparison, echo=FALSE}
-# Compare model performance
-comparison <- tibble(
-  Model = c("Simple", "Multiple"),
-  R_squared = c(
-    summary(model1)$r.squared,
-    summary(model2)$r.squared
-  ),
-  Adjusted_R_squared = c(
-    summary(model1)$adj.r.squared,
-    summary(model2)$adj.r.squared
-  ),
-  Residual_SE = c(
-    sigma(model1),
-    sigma(model2)
-  )
-)
-
-# Display comparison table
-knitr::kable(
-  comparison,
-  digits = 3,
-  caption = "Comparison of Linear Regression Models"
-)
-```
-
----
-
 ### Demographic Modelling: Age, Sex, and Interaction Effects
-
-Next, we examined how demographic factors influence national crude mortality rates (crude_rate) between 2015 and 2023, centering year at 2015 (year_centered = year - 2015).
-
-We first fitted an additive model (Model 3: crude_rate ~ year_centered + age_group + gender), which assumes a constant mortality gap between males and females across all age groups. However, checking the mean mortality rates by age and sex shows that the sex gap widens dramatically with age—from 3.45 per 100,000 in the 0-44 years group to 419.57 per 100,000 in the 75plus years group.
 
 ```{r gender-year model,echo =FALSE}
 # Data organization – Age groups
@@ -576,25 +549,9 @@ model3 <- lm(
   data = demographic_df
 )
 
-summary(model3)
-# Check on the modeling assumption that “the difference in mortality rates between men and women across different age groups is constant”
-demographic_df %>%
-  group_by(age_group, gender) %>%
-  summarise(
-    mean_rate = mean(crude_rate),
-    .groups = "drop"
-  ) %>%
-  pivot_wider(
-    names_from = gender,
-    values_from = mean_rate
-  ) %>%
-  mutate(
-    Gap = Male - Female
-  )
-# From the examination results, it can be seen that there is a significant difference in reality. Therefore, we need to introduce an interaction term between age and gender for modeling.
+
 ```
 
-To capture this compounding effect, we introduced an interaction term between age group and sex (Model 4: crude_rate ~ year_centered + age_group * gender).
 
 ```{r model4, echo = FALSE}
 #model4 
@@ -603,22 +560,11 @@ model4 <- lm(
   data = demographic_df
 )
 
-summary(model4)
 # Model 4 shows good fitting performance; the Adjusted R-squared value increases to over 99%. However, there are still issues. That is, the assumption that the female mortality rate decreases by 0–44 per year leads to a negative mortality rate in the end.
 ```
 
----
 
-An Analysis of Variance (ANOVA) comparing Model 3 and Model 4 confirms that adding the interaction term significantly improves model fit ($F = 136.84$, $p < 2.2 \times 10^{-16}$), substantially reducing the residual sum of squares (RSS) and increasing adjusted $R^2$ from 0.9490 to 0.9929.
-
-```{r compare, echo = FALSE}
-# Compare model3 and model4
-anova(model3, model4)
-# By comparing the data, it can be seen that F = 136.84 and p is very small. The significant reduction in RSS (residual sum of squares) indicates that the interaction term should be introduced.
-```
-
-
-```{r demographic-model-comparison, echo=FALSE, fig.width=10, fig.height=8}
+```{r demographic-model-comparison, echo=FALSE, fig.width=12, fig.height=4.5}
 # Preparing data
 demographic_comparison_df <- demographic_df %>%
   mutate(
@@ -673,7 +619,6 @@ ggplot(
   ) +
   scale_x_continuous(breaks = c(2015, 2019, 2023)) +
   labs(
-    title = "Comparison of Demographic Regression Models",
     subtitle = "Observed and fitted CHD mortality rates, 2015–2023",
     x = "Year",
     y = "Mortality Rate (per 100,000)",
@@ -687,62 +632,14 @@ ggplot(
   )
 ```
 
-```{r echo = FALSE}
-# Compare model3 and model4
-demographic_model_comparison <- tibble(
-  Model = c("Model 3", "Model 4"),
-
-  R_squared = c(
-    summary(model3)$r.squared,
-    summary(model4)$r.squared
-  ),
-
-  Adjusted_R_squared = c(
-    summary(model3)$adj.r.squared,
-    summary(model4)$adj.r.squared
-  ),
-
-  Residual_SE = c(
-    summary(model3)$sigma,
-    summary(model4)$sigma
-  ),
-
-  RSS = c(
-    sum(residuals(model3)^2),
-    sum(residuals(model4)^2)
-  )
-)
-
-knitr::kable(
-  demographic_model_comparison,
-  digits = 4,
-  caption = "Comparison of Demographic Regression Models"
-)
-```
-
-
-```{r model4-diagnostics, echo=FALSE, fig.width=10, fig.height=4.5}
-# model4 Residual analysis
-par(mfrow = c(1, 2))
-
-plot(model4, which = c(1, 2))
-
-par(mfrow = c(1, 1))
-# Residual diagnostics suggest potential heteroscedasticity and departures from normality, so statistical significance should be interpreted with caution.
-```
+- **Model 3(Additive):** Assumes a constant mortality gap. The sex gap widens from **3.45** (0-44 years) to **419.57** (75plus years) per 100,000.
+- **Model 4(Interaction):** Adding an age-sex interaction term significantly improves model fit ($F = 136.84$, $p < 2.2 \times 10^{-16}$).
 
 ---
 
 ### Model Diagnostics
 
-Finally, we evaluated residual behaviour to check the underlying assumptions of our linear models:
-
-1. Temporal Autocorrelation in Model 2: Plotting residuals over time across the 10 Council Areas reveals noticeable temporal patterns and positive lag-1 autocorrelation in several regions (such as East Dunbartonshire and West Dunbartonshire), indicating multi-year local fluctuations that a single linear slope cannot fully capture.
-
-2. Heteroscedasticity and Boundary Issues in Model 4: Residual diagnostics for Model 4 suggest potential heteroscedasticity (variance increasing with higher mortality rates in older age groups) and departures from normality, meaning p-values should be interpreted with caution. Moreover, because Model 4 assumes a uniform annual decline across all groups, fitted values for 0-44 years females eventually fall below zero, which is impossible for a mortality rate.
-
-
-```{r Test, echo = FALSE}
+```{r Test, echo = FALSE, fig.width=12, fig.height=3.5}
 diagnostic_df <- regression_df %>%
   mutate(
     fitted_value = fitted(model2),
@@ -759,53 +656,37 @@ ggplot(
   ) +
   geom_line(color = "steelblue") +
   geom_point(color = "steelblue") +
-  facet_wrap(~area, ncol = 2) +
+  facet_wrap(~area, ncol = 5) +
   labs(
     title = "Residuals over Time by Council Area",
     x = "Year",
     y = "Residual"
   ) +
   theme_minimal()
-autocorrelation_df <- diagnostic_df %>%
-  group_by(area) %>%
-  arrange(year, .by_group = TRUE) %>%
-  summarise(
-    lag1_cor = cor(
-      residual,
-      lag(residual),
-      use = "complete.obs"
-    ),
-    .groups = "drop"
-  ) %>%
-  arrange(desc(lag1_cor))
-
-autocorrelation_df
-x <- c(12, 8, 5, -3, -7)
-
-lag(x)
 ```
+
+- **Temporal Autocorrelation in Model 2:** Plotting residuals over time across the 10 Council Areas reveals noticeable temporal patterns and positive lag-1 autocorrelation in several regions, indicating multi-year local fluctuations that a single linear slope cannot fully capture.
+
+- **Heteroscedasticity and Boundary Issues in Model 4:** Variance increasing with higher mortality rates in older age groups; p-values should be interpreted with caution. Fitted values for 0-44 years females eventually fall below zero, which is impossible for a mortality rate.
 
 ---
 
 ## Summary of Findings
 
-Our findings show that while overall CHD mortality in Scotland declined between 2015 and 2023, both geographical location and demographic characteristics strongly shape mortality outcomes:
+- **Geographical Variation:** Adding Council Area to the regional regression model increased $R^2$ from 0.017 to 0.743 (and adjusted $R^2$ from 0.006 to 0.711), while reducing the residual standard error from 32.986 to 17.796. This confirms that regional disparities account for the majority of variation across these areas.
 
-1. Geographical Variation: Adding Council Area to the regional regression model increased $R^2$ from 0.017 to 0.743 (and adjusted $R^2$ from 0.006 to 0.711), while reducing the residual standard error from 32.986 to 17.796. This confirms that regional disparities account for the majority of variation across these areas.
-
-2. Demographic Interaction: Incorporating the interaction between age group and sex significantly improved the demographic model ($R^2 = 0.9937$), demonstrating that the excess mortality experienced by males widens substantially in middle and older age groups rather than remaining constant.
+- **Demographic Interaction:** Incorporating the interaction between age group and sex significantly improved the demographic model ($R^2 = 0.9937$), demonstrating that the excess mortality experienced by males widens substantially in middle and older age groups rather than remaining constant.
 
 ---
 
 ## Limitations and Ethical Considerations
 
-1. Subset Selection: The regional regression models only included ten Council Areas selected from the highest and lowest mortality extremes. Therefore, the findings may not represent intermediate regions across Scotland.
+- **Subset Selection:** The regional regression models only included ten Council Areas selected from the highest and lowest mortality extremes. Therefore, the findings may not represent intermediate regions across Scotland.
 
-2. Linear Model Assumptions: Assuming a single constant annual slope across all regions and demographic cohorts can lead to residual autocorrelation and unrealistic negative rate predictions in low-mortality groups (0-44 years females). Future work could apply Poisson or generalised linear models to address non-negativity and heteroscedasticity.
+- **Linear Model Assumptions:** Assuming a single constant annual slope across all regions and demographic cohorts can lead to residual autocorrelation and unrealistic negative rate predictions in low-mortality groups (0-44 years females). Future work could apply Poisson or generalised linear models to address non-negativity and heteroscedasticity.
 
-3. Aggregated Data and Ethics: Because the dataset consists of publicly available, aggregated population statistics from Public Health Scotland, there are no individual privacy concerns. However, because the data are aggregated at the Council Area level, we cannot infer individual-level risk factors (such as smoking or socioeconomic deprivation), and care should be taken to interpret regional differences in terms of healthcare resource allocation rather than stigmatising specific communities.
+- **Aggregated Data and Ethics:** Because the dataset consists of publicly available, aggregated population statistics from Public Health Scotland, there are no individual privacy concerns. However, because the data are aggregated at the Council Area level, we cannot infer individual-level risk factors (such as smoking or socioeconomic deprivation), and care should be taken to interpret regional differences in terms of healthcare resource allocation rather than stigmatising specific communities.
 
-(Note: Generative AI was used to assist with R code debugging and improving the clarity of written explanations.)
 
 ---
 
@@ -815,4 +696,6 @@ Our findings show that while overall CHD mortality in Scotland declined between 
 
 2. Scottish Government (2026) Data Zone 2022. Scottish Health and Social Care Open Data. https://www.opendata.nhs.scot/dataset/geography-codes-and-labels/resource/4ba68159-7373-4f73-9429-bf4018b00357
 
----
+.footnote[
+*Note: Generative AI was used to assist with R code debugging and improving the clarity of written explanations.*
+]
