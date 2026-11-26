@@ -1,6 +1,6 @@
 ---
 title: "Heart Disease Mortality in Scotland"
-subtitle: "Analyzing the Impact of Year, Age, Gender and Geography (2015-2024)"
+subtitle: "Analyzing the Impact of Year, Age, Sex and Geography (2015-2024)"
 author: "<br> Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li"
 institute: "University of Edinburgh"
 date: "`r Sys.Date()`"
@@ -102,13 +102,40 @@ style_xaringan(
 
 
 
+## Research Question
+
+
+### **How did coronary heart disease mortality in Scotland change between 2015 and 2023, and how do age, sex and council area shape these trends?**
+
+**Why it matters:**
+
+- Identifying most vulnerable groups.
+
+- Highlighting regions with disproportionately higher mortality rates.
+
+- Helping policymakers and healthcare provider better allocate resources.
+
+- Designing targeted interventions to reduce heart disease mortality.
+
+---
+
+## Data
+
+**Source:** Public Health Scotland - Heart Disease Mortality by Council Area
+
+- **Coverage:** 32 Council Areas + Scotland aggregate, 2015-2024
+
+- **Variables:** year, area, age group, sex, deaths, crude rate, EASR
+
+- **Note:** **2024 figures are provisional**, so they are excluded from modelling (models use 2015-2023)
+
+- **Cleaning:** joined the Data Zone 2022 lookupdictionary to convert alphanumeric zone codes into readable Council Area names, filtered specifically for CHD
+
+---
+
 ### National Trend of Coronary Heart Disease Mortality (2015-2024)
 
 .pull-left[
-&nbsp;
-]
-
-.pull-right[
 ```{r national-trend-plot, echo=FALSE}
 #全国的趋势图
 time_df <- chd_df %>%
@@ -126,22 +153,32 @@ ggplot(time_df, aes(x = year, y = easr)) +
   labs(
     subtitle = "European Age-Standardised Rate, 2015–2024 (2024 provisional)",
     x = "Year",
-    y = "European Age-Standardised Mortality Rate (per 100,000)"
+    y = "EASR (per 100,000)"
   ) +
-  theme_minimal(base_size = 13)
+  theme_minimal(base_size = 14)
 ```
 ]
 
----
-### Coronary Heart Disease Mortality by Age Group (2015-2024)
+.pull-right[
+- **National baseline:** CHD mortality across Scotland declined steadily from 2015 to 2024
 
-.pull-left[
-&nbsp;
+- **Recent trend:** A slight flattening around 2020-2021
+
+- *(2024 data are provisional)*
 ]
 
-.pull-right[
-```{r age-plot, echo=FALSE}
-#年龄的数据表
+---
+
+### Demographic Differences: Age and Sex
+
+<style>
+.pull-left { width: 48% !important; }
+.pull-right { width: 48% !important; }
+</style>
+
+.pull-left[
+```{r age-plot, echo=FALSE, fig.height=4.5}
+# Age data table
 age_df <- chd_df %>%
   filter(
     area == "Scotland",
@@ -165,7 +202,8 @@ age_df <- chd_df %>%
     )
   ) %>%
   arrange(age_group, year)
-#制作年龄-死亡率的逐年图表（注意这里使用的是crude_rate 而不是easr）
+
+# Create a yearly chart of age at death – mortality rate
 ggplot(
   age_df,
   aes(
@@ -174,31 +212,21 @@ ggplot(
     color = age_group
   )
 ) +
-  geom_line(linewidth = 1.2) +
-  geom_point(size = 2.5) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
   scale_x_continuous(breaks = 2015:2024) +
   labs(
-    subtitle = "Crude rate by age group (2024 provisional)",
     x = "Year",
     y = "Crude Mortality Rate (per 100,000)",
-    color = "Age Group",
-    caption = "Note: 2024 data are provisional."
+    color = "Age Group"
   ) +
-  theme_minimal(base_size = 13)
+  theme_minimal()
 ```
 ]
 
----
-
-### Coronary Heart Disease Mortality by Sex (2015-2024)
-
-.pull-left[
-&nbsp;
-]
-
 .pull-right[
-```{r gender-plot, echo=FALSE}
-#接下来制作性别的数据表
+```{r gender-plot, echo=FALSE, fig.height=4.5}
+# Sex data table
 gender_df <- chd_df %>%
   filter(
     area == "Scotland",
@@ -206,7 +234,7 @@ gender_df <- chd_df %>%
     gender %in% c("Male", "Female")
   ) %>%
   arrange(gender, year)
-#下面的区域是性别-冠心病死亡逐年图表
+# Gender – Annual Death Rates Due to Coronary Heart Disease
 ggplot(
   gender_df,
   aes(
@@ -215,31 +243,34 @@ ggplot(
     color = gender
   )
 ) +
-  geom_line(linewidth = 1.2) +
-  geom_point(size = 2.5) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 1.5) +
   scale_x_continuous(breaks = 2015:2024) +
   labs(
-    subtitle = "Crude rate by sex, All Ages (2024 provisional)",
     x = "Year",
     y = "Crude Mortality Rate (per 100,000)",
-    color = "Sex",
-    caption = "Note: 2024 data are provisional."
+    color = "Sex"
   ) +
-  theme_minimal(base_size = 13)
+  theme_minimal()
 ```
 ]
 
+- **Age Group:** Mortality rates rise sharply with age. While rates in the 0-44 years group remain close to zero, mortality increases substantially in older cohorts and peaks in the 75plus years group.
+
+- **Sex:** Male crude mortality rates remain consistently more than twice as high as female rates.
+
 ---
 
-### Coronary Heart Disease Mortality by Geography (2015-2023)
+### Geographical Differences Across Council Areas
+
+<style>
+.pull-left { width: 48% !important; }
+.pull-right { width: 48% !important; }
+</style>
 
 .pull-left[
-&nbsp;
-]
-
-.pull-right[
-```{r geography-plot, echo=FALSE}
-#下面制作地区的数据表
+```{r geography-plot, echo=FALSE, fig.height=4.5}
+# Area data table
 geographical_df <- chd_df %>%
   filter(
     year >= 2015,
@@ -254,6 +285,7 @@ geographical_df <- chd_df %>%
     .groups = "drop"
   ) %>%
   arrange(desc(mean_easr))
+
 geographical_highlight_df <- geographical_df %>%
   arrange(desc(mean_easr)) %>%
   mutate(
@@ -266,7 +298,8 @@ geographical_highlight_df <- geographical_df %>%
   )
 geographical_top_bottom <- geographical_highlight_df %>%
   filter(highlight_group != "Middle")
-#下面进行地区-冠心病死亡的2015-2023年平均图表制作
+
+# Regional Average Charts for Deaths from Coronary Heart Disease from 2015 to 2023
 ggplot(
   geographical_top_bottom,
   aes(
@@ -292,33 +325,24 @@ ggplot(
     y = max(geographical_top_bottom$mean_easr) * 1.12
   ) +
   labs(
-    subtitle = "Top 5 vs Bottom 5 Council Areas by mean EASR, 2015–2023",
     x = "Council Area",
     y = "Mean annual EASR (per 100,000)",
-    fill = NULL,
-    caption = "Unweighted arithmetic mean of annual EASRs."
+    fill = NULL
   ) +
   theme_minimal(base_size = 12) +
   theme(
     panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
     axis.text.y = element_text(size = 11),
+    plot.title = element_text(face = "bold"),
     legend.position = "top"
   )
 ```
 ]
 
----
-
-### Coronary Heart Disease Mortality Trends in High- and Low-Mortality Areas (2015-2023)
-
-.pull-left[
-&nbsp;
-]
-
 .pull-right[
-```{r geography-trend-plot, echo=FALSE}
-#下面是是为了实现不同地区逐年冠心病死亡的变化曲线（使用每年的EASR）
+```{r geography-trend-plot, echo=FALSE, fig.height=4.5}
+# The variation curves of coronary heart disease deaths across different regions over time (using the annual EASR data)
 geographical_trend_df <- chd_df %>%
   filter(
     year >= 2015,
@@ -337,7 +361,8 @@ geographical_trend_df <- chd_df %>%
     mean_easr = mean(easr, na.rm = TRUE),
     .groups = "drop"
   )
-#下面进行绘图 这张图中的地区没有经过地区实际人口数的加权 只是简单的算术平均
+
+# Drawings (without any weighting based on the actual population of the region; it’s simply a simple arithmetic calculation)
 ggplot(
   geographical_trend_df,
   aes(
@@ -356,186 +381,17 @@ ggplot(
   ) +
   scale_x_continuous(breaks = 2015:2023) +
   labs(
-    subtitle = "Five highest vs five lowest mean-EASR Council Areas, 2015–2023",
     x = "Year",
     y = "Mean annual EASR (per 100,000)",
-    color = "Area Group",
-    caption = "Groups defined by 2015–2023 mean EASR; unweighted averages of five areas per group."
+    color = "Area Group"
   ) +
   theme_minimal(base_size = 12)
-
 ```
 ]
 
----
+- **Subset analysis:** We compared the 5 highest-mortality authorities vs. the five lowest-mortality authorities. 
 
-class: center, middle
-
-## A statement of the overall goal / research question
-
----
-
-class: inverse, center, middle
-
-# Section title
+- ** Regional Disparity:** High-mortality areas (e.g. East Ayrshire, Glasgow City) experienced nearly **double** the rate of lowest-mortality ares.
+- **Persistence:** This regional gap persisted throughout 2015–2023.
 
 ---
-
-# Hello World
-
-Click the `Knit` button to compile your presentation
-
-Make sure to commit and push all resulting files to your GitHub repo
-
----
-
-class: inverse, middle, center
-
-# Using xaringan
-
----
-
-# xaringan
-
-The presentation is created using the `xaringan` package
-
-Use `---` to separate slides and `--` for incremental builds
-
---
-
-Like this
-
----
-
-# Layouts
-
-You can use plain text
-
-or bullet points
-
-.pull-left[
-
-or text in two columns $^*$
-
-]
-
-.pull-right[
-
-like
-this
-]
-
-
-.footnote[
-
-[*] And add footnotes
-
-]
-
----
-
-# Code
-
-```{r boring-regression}
-# a boring regression
-model <- lm(dist ~ speed, data = cars)
-tidy(model)
-glance(model)
-```
-
----
-
-# Plots
-
-```{r recode-species, echo = FALSE}
-# In this chunk I'm doing a bunch of analysis that I don't want to present 
-# in my slides. But I need the resulting data frame for a plot I want to present.
-iris_modified <- iris %>%
-  mutate(Species = fct_other(Species, keep = "setosa"))
-```
-
-```{r plot-iris, echo = FALSE}
-# Code hidden with echo = FALSE
-# Uses modified iris dataset from previous chunk
-# Play around with height and width until you're happy with the look
-ggplot(data = iris_modified, mapping = aes(x = Sepal.Width, y = Sepal.Length, color = Species)) +
-  geom_point() + 
-  theme_minimal() # theme options: https://ggplot2.tidyverse.org/reference/ggtheme.html
-```
-
----
-
-## Plot and text
-
-.pull-left[
-- Some text
-- goes here
-]
-.pull-right[
-```{r warning=FALSE, out.width="100%", fig.width=4, echo=FALSE}
-# see how I changed out.width and fig.width from defaults
-# to make the figure bigger
-ggplot(penguins, aes(x = bill_length_mm, y = species, color = species)) +
-  geom_boxplot() +
-  theme_minimal()
-```
-]
-
----
-
-# Tables
-
-If you want to generate a table, make sure it is in the HTML format (instead of Markdown or other formats), e.g.,
-
-```{r iris-table, echo = FALSE}
-kable(head(iris), format = "html")
-```
-
----
-
-# Images
-
-```{r castle, echo = FALSE, out.width = "55%", fig.align = "center", fig.cap = "Image credit: Photo by Jörg Angeli on Unsplash."}
-
-```
-
-Or you can also include a full page image. See next slide.
-
----
-
-
-class: inverse, center, middle
-background-image: url(img/edinburgh-castle.jpg)
-background-size: contain
----
-
-# Math Expressions
-
-You can write LaTeX math expressions inside a pair of dollar signs, e.g. &#36;\alpha+\beta$ renders $\alpha+\beta$. You can use the display style with double dollar signs:
-
-```
-$$\bar{X}=\frac{1}{n}\sum_{i=1}^nX_i$$
-```
-
-$$\bar{X}=\frac{1}{n}\sum_{i=1}^nX_i$$
-
-Limitations:
-
-1. The source code of a LaTeX math expression must be in one line, unless it is inside a pair of double dollar signs, in which case the starting `$$` must appear in the very beginning of a line, followed immediately by a non-space character, and the ending `$$` must be at the end of a line, led by a non-space character;
-
-1. There should not be spaces after the opening `$` or before the closing `$`.
-
-1. Math does not work on the title slide (see [#61](https://github.com/yihui/xaringan/issues/61) for a workaround).
-
----
-
-# Feeling adventurous?
-
-- Want to find out more about `xaringan`? See https://slides.yihui.name/xaringan/#1.
-
-- You are welcome to use the default styling of the slides. In fact, that's what I expect majority of you will do. You will differentiate yourself with the content of your presentation.
-
-- But some of you might want to play around with slide styling. The 
-`xaringanthemer` provides some solutions for this that: https://pkg.garrickadenbuie.com/xaringanthemer.
-
-- And if you want more bells and whistles, there is also `xaringanExtra`: https://pkg.garrickadenbuie.com/xaringanExtra.
