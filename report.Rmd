@@ -390,8 +390,7 @@ ggplot(regression_df, aes(x = year, y = easr)) +
 
 ### Limitations of the Simple Model
 
-The simple linear regression plot shows a slight downward trend in CHD mortality rates between 2015 and 2023 ($R^2 = 0.017$, $p = 0.216$). However, the observed mortality rates vary considerably across Council Areas within the same year. This indicates that year alone cannot adequately explain the variation in mortality rates. Therefore, we extended the model by including Council Area (area) as an additional predictor.
-
+The simple linear regression plot shows a slight downward trend in CHD mortality rates between 2015 and 2023 ($R^2 = 0.017$, $p = 0.216$). However, the observed mortality rates vary considerably across Council Areas within the same year. This indicates that year alone cannot adequately explain the variation in mortality rates. 
 #### Multiple Linear Regression (Model 2)
 
 The multiple linear regression model includes both year and area, capturing the overall relationship between time and mortality rates while accounting for baseline differences between regions.
@@ -479,9 +478,9 @@ knitr::kable(
 
 ### Demographic Modelling: Age, Sex, and Interaction Effects
 
-Next, we examined how demographic factors influence national crude mortality rates (crude_rate) between 2015 and 2023, centering year at 2015 (year_centered = year - 2015).
+We examined how demographic factors influence national crude mortality rates (crude_rate) between 2015 and 2023, centering year at 2015 (year_centered = year - 2015).
 
-We first fitted an additive model (Model 3: crude_rate ~ year_centered + age_group + gender), which assumes a constant mortality gap between males and females across all age groups. However, checking the mean mortality rates by age and sex shows that the sex gap widens dramatically with age—from 3.45 per 100,000 in the 0-44 years group to 419.57 per 100,000 in the 75plus years group.
+Model 3: crude_rate ~ year_centered + age_group + gender, which assumes a constant mortality gap between males and females across all age groups. 
 
 ```{r gender-year model,echo =FALSE}
 # Data organization – Age groups
@@ -539,7 +538,7 @@ demographic_df %>%
 # From the examination results, it can be seen that there is a significant difference in reality. Therefore, we need to introduce an interaction term between age and gender for modeling.
 ```
 
-To capture this compounding effect, we introduced an interaction term between age group and sex (Model 4: crude_rate ~ year_centered + age_group * gender).
+To capture this compounding effect,  Model 4: crude_rate ~ year_centered + age_group * gender.
 
 ```{r model4, echo = FALSE}
 #model4 
@@ -728,21 +727,10 @@ lag(x)
 
 ## Summary of Findings
 
-Our findings show that while overall CHD mortality in Scotland declined between 2015 and 2023, both geographical location and demographic characteristics strongly shape mortality outcomes:
-
-1. Geographical Variation: Adding Council Area to the regional regression model increased $R^2$ from 0.017 to 0.743 (and adjusted $R^2$ from 0.006 to 0.711), while reducing the residual standard error from 32.986 to 17.796. This confirms that regional disparities account for the majority of variation across these areas.
-
-2. Demographic Interaction: Incorporating the interaction between age group and sex significantly improved the demographic model ($R^2 = 0.9937$), demonstrating that the excess mortality experienced by males widens substantially in middle and older age groups rather than remaining constant.
 
 ## Limitations and Ethical Considerations
 
-1. Subset Selection: The regional regression models only included ten Council Areas selected from the highest and lowest mortality extremes. Therefore, the findings may not represent intermediate regions across Scotland.
 
-2. Linear Model Assumptions: Assuming a single constant annual slope across all regions and demographic cohorts can lead to residual autocorrelation and unrealistic negative rate predictions in low-mortality groups (0-44 years females). Future work could apply Poisson or generalised linear models to address non-negativity and heteroscedasticity.
-
-3. Aggregated Data and Ethics: Because the dataset consists of publicly available, aggregated population statistics from Public Health Scotland, there are no individual privacy concerns. However, because the data are aggregated at the Council Area level, we cannot infer individual-level risk factors (such as smoking or socioeconomic deprivation), and care should be taken to interpret regional differences in terms of healthcare resource allocation rather than stigmatising specific communities.
-
-(Note: Generative AI was used to assist with R code debugging and improving the clarity of written explanations.)
 
 
 ## References
