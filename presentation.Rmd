@@ -40,17 +40,17 @@ knitr::opts_chunk$set(fig.retina = 3, dpi = 300, fig.width = 8, fig.height = 5, 
 
 ```{r load-data, include=FALSE}
 # Load your data here
-# 1. Load data加载数据
+# 1. Load data
 df <- read_csv("data/hd_mortalitybyca.csv")
 dz_codes <- read_csv("data/dz_codes.csv")
 
-# 2. Create Council Area lookup table 制作地区和地区代码的对照表
+# 2. Create Council Area lookup table
 area <- dz_codes %>%
   select(CA, CAName) %>%
   distinct() %>%
   drop_na(CA, CAName)
 
-# 3. Clean and prepare mortality data 清洗死亡数据表
+# 3. Clean and prepare mortality data
 final_df <- df %>%
   mutate(
     year_provisional = str_ends(Year, "p"),
@@ -80,13 +80,13 @@ final_df <- df %>%
     deaths, crude_rate, easr
   )
 
-# 4. Validate cleaned data 只是验证数据是否有异常
+# 4. Validate cleaned data
 stopifnot(nrow(final_df) == nrow(df))
 stopifnot(!anyNA(final_df$area))
 stopifnot(!anyNA(final_df$year))
 
 
-# 5.筛选出冠心病 filter CHD
+# 5.filter CHD
 chd_df <- final_df %>%
   filter(diagnosis == "Coronary Heart Disease")
 ```
@@ -142,7 +142,7 @@ class: center, middle
 
 .pull-left[
 ```{r national-trend-plot, echo=FALSE}
-#全国的趋势图
+# National trend chart
 time_df <- chd_df %>%
   filter(
     area == "Scotland",
@@ -150,7 +150,7 @@ time_df <- chd_df %>%
     gender == "All"
   ) %>%
   arrange(year)
-#下面实现制图 这个图标是从2015 - 2024苏格兰全国因为冠心病死亡的人数
+# The number of deaths from coronary heart disease in Scotland nationwide from 2015 to 2024
 ggplot(time_df, aes(x = year, y = easr)) +
   geom_line(linewidth = 1.2, color = "steelblue") +
   geom_point(size = 2.5, color = "steelblue") +
