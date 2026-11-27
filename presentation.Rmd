@@ -95,8 +95,7 @@ chd_df <- final_df %>%
 
 #Background image
 style_xaringan(
-  title_slide_background_color = "#1F3A5F",
-  title_slide_text_color = "#FFFFFF"
+  title_slide_background_image = "img/confetti.jpg"
 )
 ```
 
