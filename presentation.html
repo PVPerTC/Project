@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Heart Disease Mortality in Scotland</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="  Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li" />
+    <meta name="date" content="2026-11-27" />
+    <script src="libs/header-attrs-2.32/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Heart Disease Mortality in Scotland
+]
+.subtitle[
+## Analyzing the Impact of Year, Age, Sex and Geography (2015-2024)
+]
+.author[
+### <br> Kitty Hou, Zihan Kong, Wenjie Li, Zhuohang Li
+]
+.institute[
+### University of Edinburgh
+]
+.date[
+### 2026-11-27
+]
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Research Question
+
+
+### **How did coronary heart disease mortality in Scotland change between 2015 and 2023, and how do age, sex and council area shape these trends?**
+
+**Why it matters:**
+
+- Identifying most vulnerable groups.
+
+- Highlighting regions with disproportionately higher mortality rates.
+
+- Helping policymakers and healthcare provider better allocate resources.
+
+- Designing targeted interventions to reduce heart disease mortality.
+
+---
+
+## Data
+
+**Source:** Public Health Scotland - Heart Disease Mortality by Council Area
+
+- **Coverage:** 32 Council Areas + Scotland aggregate, 2015-2024
+
+- **Variables:** year, area, age group, sex, deaths, crude rate, EASR
+
+- **Note:** **2024 figures are provisional**, so they are excluded from modelling (models use 2015-2023)
+
+- **Cleaning:** joined the Data Zone 2022 lookupdictionary to convert alphanumeric zone codes into readable Council Area names, filtered specifically for CHD
+
+---
+
+class: center, middle
+
+## Exploratory Data Analysis
+
+---
+
+### National Trend of Coronary Heart Disease Mortality (2015-2024)
+
+.pull-left[
+&lt;img src="presentation_files/figure-html/national-trend-plot-1.png" alt="" width="100%" /&gt;
+]
+
+.pull-right[
+- **National baseline:** CHD mortality across Scotland declined steadily from 2015 to 2024
+
+- **Recent trend:** A slight flattening around 2020-2021
+
+- *(2024 data are provisional)*
+]
+
+---
+
+### Demographic Differences: Age and Sex
+
+&lt;style&gt;
+.pull-left { width: 48% !important; }
+.pull-right { width: 48% !important; }
+&lt;/style&gt;
+
+.pull-left[
+&lt;img src="presentation_files/figure-html/age-plot-1.png" alt="" width="100%" /&gt;
+]
+
+.pull-right[
+&lt;img src="presentation_files/figure-html/gender-plot-1.png" alt="" width="100%" /&gt;
+]
+
+- **Age Group:** Mortality rates rise sharply with age. While rates in the 0-44 years group remain close to zero, mortality increases substantially in older cohorts and peaks in the 75plus years group.
+
+- **Sex:** Male crude mortality rates remain consistently more than twice as high as female rates.
+
+- *(2024 data are provisional)*
+
+---
+
+### Geographical Differences Across Council Areas
+
+&lt;style&gt;
+.pull-left { width: 48% !important; }
+.pull-right { width: 48% !important; }
+&lt;/style&gt;
+
+.pull-left[
+&lt;img src="presentation_files/figure-html/geography-plot-1.png" alt="" width="100%" /&gt;
+]
+
+.pull-right[
+&lt;img src="presentation_files/figure-html/geography-trend-plot-1.png" alt="" width="100%" /&gt;
+]
+
+- **Subset analysis:** We compared the 5 highest-mortality authorities vs. the five lowest-mortality authorities. 
+
+- ** Regional Disparity:** High-mortality areas (e.g. East Ayrshire, Glasgow City) experienced nearly **double** the rate of lowest-mortality ares.
+- **Persistence:** This regional gap persisted throughout 2015–2023.
+
+---
+
+class: center, middle
+
+## Linear Regression Analysis
+
+
+
+---
+
+### Regional Modelling: Simple vs. Multiple Linear Regression
+
+
+
+.pull-left[
+&lt;img src="presentation_files/figure-html/simple-regression-plot-1.png" alt="" width="100%" /&gt;
+]
+
+
+
+.pull-right[
+&lt;img src="presentation_files/figure-html/multiple-regression-plot-1.png" alt="" width="100%" /&gt;
+]
+
+- **Model 1(Year only):**  `\(R^2 = 0.017\)`, `\(p = 0.216\)`.  Year alone cannot adequately explain the variation.
+
+- **Model 2(Year + Area):** Adding Council Area increased `\(R^2\)` to **0.743** and reduced the residual SE to 17.796. 
+
+- **Conclusion:** This confirms that regional disparities account for the majority of variation across these areas.
+
+---
+
+### Actual vs Predicted Mortality Rates
+
+&lt;img src="presentation_files/figure-html/predicted-vs-actual-1.png" alt="" width="100%" /&gt;
+
+The dashed red line represents perfect predictions. Points closer to this line indicate smaller prediction errors.
+
+---
+
+### Demographic Modelling: Age, Sex, and Interaction Effects
+
+
+
+
+
+
+
+&lt;img src="presentation_files/figure-html/demographic-model-comparison-1.png" alt="" width="100%" /&gt;
+
+- **Model 3(Additive):** Assumes a constant mortality gap. The sex gap widens from **3.45** (0-44 years) to **419.57** (75plus years) per 100,000.
+- **Model 4(Interaction):** Adding an age-sex interaction term significantly improves model fit (`\(F = 136.84\)`, `\(p &lt; 2.2 \times 10^{-16}\)`).
+
+---
+
+### Model Diagnostics
+
+&lt;img src="presentation_files/figure-html/Test-1.png" alt="" width="100%" /&gt;
+
+- **Temporal Autocorrelation in Model 2:** Plotting residuals over time across the 10 Council Areas reveals noticeable temporal patterns and positive lag-1 autocorrelation in several regions, indicating multi-year local fluctuations that a single linear slope cannot fully capture.
+
+- **Heteroscedasticity and Boundary Issues in Model 4:** Variance increasing with higher mortality rates in older age groups; p-values should be interpreted with caution. Fitted values for 0-44 years females eventually fall below zero, which is impossible for a mortality rate.
+
+---
+
+## Summary of Findings
+
+- **Geographical Variation:** Adding Council Area to the regional regression model increased `\(R^2\)` from 0.017 to 0.743 (and adjusted `\(R^2\)` from 0.006 to 0.711), while reducing the residual standard error from 32.986 to 17.796. This confirms that regional disparities account for the majority of variation across these areas.
+
+- **Demographic Interaction:** Incorporating the interaction between age group and sex significantly improved the demographic model (`\(R^2 = 0.9937\)`), demonstrating that the excess mortality experienced by males widens substantially in middle and older age groups rather than remaining constant.
+
+---
+
+## Limitations and Ethical Considerations
+
+- **Subset Selection:** The regional regression models only included ten Council Areas selected from the highest and lowest mortality extremes. Therefore, the findings may not represent intermediate regions across Scotland.
+
+- **Linear Model Assumptions:** Assuming a single constant annual slope across all regions and demographic cohorts can lead to residual autocorrelation and unrealistic negative rate predictions in low-mortality groups (0-44 years females). Future work could apply Poisson or generalised linear models to address non-negativity and heteroscedasticity.
+
+- **Aggregated Data and Ethics:** Because the dataset consists of publicly available, aggregated population statistics from Public Health Scotland, there are no individual privacy concerns. However, because the data are aggregated at the Council Area level, we cannot infer individual-level risk factors (such as smoking or socioeconomic deprivation), and care should be taken to interpret regional differences in terms of healthcare resource allocation rather than stigmatising specific communities.
+
+
+---
+
+## References
+
+1. Heart Disease and Stroke Team (2026) Heart Disease Mortality by Council Area Version 2.0. Scottish Health and Social Care Open Data. https://www.opendata.nhs.scot/dataset/scottish-heart-disease-statistics
+
+2. Scottish Government (2026) Data Zone 2022. Scottish Health and Social Care Open Data. https://www.opendata.nhs.scot/dataset/geography-codes-and-labels/resource/4ba68159-7373-4f73-9429-bf4018b00357
+
+.footnote[
+*Note: Generative AI was used to assist with R code debugging and improving the clarity of written explanations.*
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "ratio": "16:9",
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
